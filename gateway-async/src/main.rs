@@ -17,7 +17,7 @@ use crate::{
     models::{PaymentRequest, SummaryQuery},
     repository::Repository,
     service::Service,
-    utils::STRATEGY,
+    utils::{STRATEGY, WORKER_COUNT},
 };
 
 #[post("/payments")]
@@ -53,6 +53,7 @@ async fn main() -> std::io::Result<()> {
     let controller = Controller::new(repository.clone());
     let service = Service::new(client.clone(), repository.clone());
     println!("STRATEGY: {}", STRATEGY);
+    println!("WORKERS: {}", WORKER_COUNT);
 
     service.initialize_dispatcher();
     service.initialize_workers();

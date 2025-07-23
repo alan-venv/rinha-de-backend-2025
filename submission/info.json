@@ -1,0 +1,13 @@
+{
+  "name": "Alan Silva",
+  "social": [
+    "https://github.com/alan-venv",
+    "https://www.linkedin.com/in/alan-venv/"
+  ],
+  "source-code-repo": "https://github.com/alan-venv/rinha-de-backend-2025",
+  "langs": ["rust"],
+  "storages": [],
+  "messaging": [],
+  "load-balancers": ["traefik"],
+  "other-technologies": []
+}

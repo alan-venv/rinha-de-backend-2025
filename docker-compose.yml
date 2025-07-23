@@ -23,7 +23,7 @@ services:
           memory: "180MB"
   rinha-gateway-1:
     build:
-      context: ./gateway
+      context: ./gateway-async
     container_name: rinha-gateway-1
     labels:
       - "traefik.enable=true"
@@ -45,7 +45,7 @@ services:
           memory: "60MB"
   rinha-gateway-2:
     build:
-      context: ./gateway
+      context: ./gateway-async
     container_name: rinha-gateway-2
     labels:
       - "traefik.enable=true"

@@ -1,8 +1,5 @@
-use crossbeam_channel::{Receiver, Sender, unbounded};
+use async_channel::{Receiver, Sender, unbounded};
 use crossbeam_queue::SegQueue;
-use reqwest::blocking::Client;
-use std::cmp::min;
-use std::thread;
 use std::time::Instant;
 use std::{
     sync::{
@@ -11,12 +8,15 @@ use std::{
     },
     time::Duration,
 };
+use tokio::time;
 
-use crate::utils::{FLAG_TIMEOUT_TRIGGER_IN_MILLISECONDS, WORKER_COUNT, WORKER_JOBS_COUNT};
+use crate::utils::{FLAG_TIMEOUT_TRIGGER_IN_MILLISECONDS, WORKER_COUNT};
 use crate::{client::ProcessorClient, models::PaymentRequest, repository::Repository};
 
 #[derive(Clone)]
 pub struct Service {
+    client: ProcessorClient,
+    repository: Repository,
     default_health: Arc<AtomicBool>,
     #[allow(dead_code)]
     fallback_health: Arc<AtomicBool>,
@@ -26,9 +26,11 @@ pub struct Service {
 }
 
 impl Service {
-    pub fn new() -> Service {
+    pub fn new(client: ProcessorClient, repository: Repository) -> Service {
         let (sender, receiver) = unbounded::<PaymentRequest>();
         return Service {
+            client: client,
+            repository: repository,
             default_health: Arc::new(AtomicBool::new(false)),
             fallback_health: Arc::new(AtomicBool::new(false)),
             queue: Arc::new(SegQueue::new()),
@@ -42,35 +44,31 @@ impl Service {
     }
 
     pub fn initialize_dispatcher(&self) {
+        let client = self.client.clone();
+        let repository = self.repository.clone();
         let queue = self.queue.clone();
         let sender = self.sender.clone();
         let health = self.default_health.clone();
 
-        thread::spawn(move || {
-            let sync = Client::new();
-            let client = ProcessorClient::new(sync.clone());
-            let repository = Repository::new(sync.clone());
+        tokio::spawn(async move {
+            let mut interval = time::interval(Duration::from_secs(1));
             loop {
                 if let Some(request) = queue.pop() {
                     let instant = Instant::now();
                     let req = request.to_processor();
-                    let success = client.capture_default_sync(&req);
+                    let success = client.capture_default(&req).await;
                     let duration = instant.elapsed().as_millis();
                     if success {
-                        repository.insert_default_sync(&req);
+                        repository.insert_default(&req).await;
                         if duration <= FLAG_TIMEOUT_TRIGGER_IN_MILLISECONDS {
                             health.store(true, Ordering::Relaxed);
-                            if queue.len() > 0 {
-                                let count = min(queue.len(), WORKER_JOBS_COUNT);
-                                for _ in 0..count {
-                                    if let Some(item) = queue.pop() {
-                                        if sender.send(item).is_err() {
-                                            println!("Morri");
-                                            return;
-                                        }
-                                    } else {
+                            loop {
+                                if let Some(item) = queue.pop() {
+                                    if sender.send_blocking(item).is_err() {
                                         break;
                                     }
+                                } else {
+                                    break;
                                 }
                             }
                         }
@@ -78,29 +76,28 @@ impl Service {
                         queue.push(request);
                     }
                 }
-                thread::sleep(Duration::from_secs(1));
+                interval.tick().await;
             }
         });
     }
 
     pub fn initialize_workers(&self) {
         for _ in 0..WORKER_COUNT {
+            let client = self.client.clone();
+            let repository = self.repository.clone();
             let queue = self.queue.clone();
             let receiver = self.receiver.clone();
             let health = self.default_health.clone();
 
-            thread::spawn(move || {
-                let sync = Client::new();
-                let client = ProcessorClient::new(sync.clone());
-                let repository = Repository::new(sync.clone());
-                for request in receiver {
+            tokio::spawn(async move {
+                while let Ok(request) = receiver.recv().await {
                     if health.load(Ordering::Relaxed) {
                         let instant = Instant::now();
                         let req = request.to_processor();
-                        let success = client.capture_default_sync(&req);
+                        let success = client.capture_default(&req).await;
                         let duration = instant.elapsed().as_millis();
                         if success {
-                            repository.insert_default_sync(&req);
+                            repository.insert_default(&req).await;
                         } else {
                             queue.push(request);
                         }

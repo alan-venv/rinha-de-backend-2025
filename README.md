@@ -7,8 +7,6 @@ Minha participação na [**Rinha de Backend 2025**](https://github.com/zanfrance
 - [Rust](https://www.rust-lang.org/)
 - [Actix Web](https://actix.rs/)
 
-Obs: o projeto entregue para a avaliação final foi o gateway-hybrid
-
 ## 🚚 Repositório
 - [GitHub](https://github.com/alan-venv/rinha-de-backend-2025)
 

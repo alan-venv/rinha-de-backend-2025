@@ -1,4 +1,5 @@
 /target
 **/target/
+/resources/tests/*.json
 *.jtl
 *.log

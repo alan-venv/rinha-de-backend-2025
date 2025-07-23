@@ -18,7 +18,7 @@ services:
           cpus: "0.5"
           memory: "180MB"
   rinha-gateway-1:
-    image: ghcr.io/alan-venv/rinha-gateway:1.0
+    image: ghcr.io/alan-venv/rinha-gateway-async:1.0
     container_name: rinha-gateway-1
     labels:
       - "traefik.enable=true"
@@ -39,7 +39,7 @@ services:
           cpus: "0.4"
           memory: "60MB"
   rinha-gateway-2:
-    image: ghcr.io/alan-venv/rinha-gateway:1.0
+    image: ghcr.io/alan-venv/rinha-gateway-async:1.0
     container_name: rinha-gateway-2
     labels:
       - "traefik.enable=true"

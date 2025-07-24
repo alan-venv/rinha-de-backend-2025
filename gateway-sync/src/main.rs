@@ -15,7 +15,7 @@ use crate::{
     controller::Controller,
     models::{PaymentRequest, SummaryQuery},
     service::Service,
-    utils::{STRATEGY, WORKER_COUNT},
+    utils::{STRATEGY, WORKERS},
 };
 
 #[post("/payments")]
@@ -49,7 +49,7 @@ async fn main() -> std::io::Result<()> {
     let controller = Controller::new(client.clone());
     let service = Service::new();
     println!("STRATEGY: {}", STRATEGY);
-    println!("WORKERS: {}", WORKER_COUNT);
+    println!("WORKERS: {}", WORKERS);
 
     service.initialize_dispatcher();
     service.initialize_workers();

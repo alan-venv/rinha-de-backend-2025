@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-use crate::utils::{FLAG_TIMEOUT_TRIGGER_IN_MILLISECONDS, WORKER_COUNT};
+use crate::utils::{TRIGGER, WORKERS};
 use crate::{client::ProcessorClient, models::PaymentRequest, repository::Repository};
 
 #[derive(Clone)]
@@ -57,7 +57,7 @@ impl Service {
                     let duration = instant.elapsed().as_millis();
                     if success {
                         repository.insert_default_sync(&req);
-                        if duration <= FLAG_TIMEOUT_TRIGGER_IN_MILLISECONDS {
+                        if duration <= TRIGGER {
                             health.store(true, Ordering::Relaxed);
                             loop {
                                 if let Some(item) = queue.pop() {
@@ -79,7 +79,7 @@ impl Service {
     }
 
     pub fn initialize_workers(&self) {
-        for _ in 0..WORKER_COUNT {
+        for _ in 0..WORKERS {
             let queue = self.queue.clone();
             let receiver = self.receiver.clone();
             let health = self.default_health.clone();
@@ -99,7 +99,7 @@ impl Service {
                         } else {
                             queue.push(request);
                         }
-                        if !success || duration > FLAG_TIMEOUT_TRIGGER_IN_MILLISECONDS {
+                        if !success || duration > TRIGGER {
                             health.store(false, Ordering::Relaxed);
                         }
                     } else {

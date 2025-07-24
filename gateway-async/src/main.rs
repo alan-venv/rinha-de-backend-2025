@@ -60,9 +60,6 @@ async fn main() -> std::io::Result<()> {
     println!("STRATEGY: {}", STRATEGY);
     println!("WORKERS: {}", WORKERS);
 
-    let actix_workers = 1;
-    println!("{}", actix_workers);
-
     service.initialize_dispatcher();
     service.initialize_workers();
 
@@ -75,7 +72,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(service.clone()))
     })
     .bind(("0.0.0.0", 8080))?
-    .workers(actix_workers)
+    .workers(1)
     .run()
     .await
 }

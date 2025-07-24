@@ -9,7 +9,11 @@ use actix_web::{
     App, HttpResponse, HttpServer, Responder, get, post,
     web::{Data, Json, Query},
 };
+use mimalloc::MiMalloc;
 use reqwest::Client;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 use crate::{
     controller::Controller,

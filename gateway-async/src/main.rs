@@ -9,7 +9,11 @@ use actix_web::{
     App, HttpResponse, HttpServer, Responder, get, post,
     web::{Data, Json, Query},
 };
+use mimalloc::MiMalloc;
 use reqwest::Client;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 use crate::{
     client::ProcessorClient,
@@ -23,6 +27,7 @@ use crate::{
 #[post("/payments")]
 async fn payments(service: Data<Service>, request: Json<PaymentRequest>) -> impl Responder {
     service.submit(request.0);
+
     return HttpResponse::Accepted().finish();
 }
 
@@ -55,6 +60,9 @@ async fn main() -> std::io::Result<()> {
     println!("STRATEGY: {}", STRATEGY);
     println!("WORKERS: {}", WORKERS);
 
+    let actix_workers = 1;
+    println!("{}", actix_workers);
+
     service.initialize_dispatcher();
     service.initialize_workers();
 
@@ -67,7 +75,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(service.clone()))
     })
     .bind(("0.0.0.0", 8080))?
-    .workers(1)
+    .workers(actix_workers)
     .run()
     .await
 }

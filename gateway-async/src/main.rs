@@ -27,7 +27,6 @@ use crate::{
 #[post("/payments")]
 async fn payments(service: Data<Service>, request: Json<PaymentRequest>) -> impl Responder {
     service.submit(request.0);
-
     return HttpResponse::Accepted().finish();
 }
 

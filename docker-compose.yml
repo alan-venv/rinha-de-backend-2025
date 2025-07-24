@@ -7,11 +7,15 @@ services:
       - "--global.checknewversion=false"
       - "--log.level=ERROR"
       - "--accesslog=false"
+      # - "--log.level=DEBUG"
+      # - "--api.insecure=true"
+      # - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "9999:80"
+      # - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
@@ -21,6 +25,7 @@ services:
         limits:
           cpus: "0.5"
           memory: "180MB"
+
   rinha-gateway-1:
     build:
       context: ./gateway-async
@@ -43,6 +48,7 @@ services:
         limits:
           cpus: "0.4"
           memory: "60MB"
+
   rinha-gateway-2:
     build:
       context: ./gateway-async
@@ -65,6 +71,7 @@ services:
         limits:
           cpus: "0.4"
           memory: "60MB"
+
   rinha-db:
     build:
       context: ./database

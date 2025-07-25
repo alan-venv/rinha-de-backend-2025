@@ -4,6 +4,7 @@ services:
     container_name: rinha-nginx
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - sockets:/sockets:rw
     ports:
       - "9999:80"
     networks:
@@ -21,6 +22,10 @@ services:
     build:
       context: ./gateway
     container_name: rinha-gateway-1
+    volumes:
+      - sockets:/sockets:rw
+    environment:
+      - SOCKET_PATH=/sockets/actix.sock.1
     networks:
       - backend
       - payment-processor
@@ -36,6 +41,10 @@ services:
     build:
       context: ./gateway
     container_name: rinha-gateway-2
+    volumes:
+      - sockets:/sockets:rw
+    environment:
+      - SOCKET_PATH=/sockets/actix.sock.2
     networks:
       - backend
       - payment-processor
@@ -59,6 +68,9 @@ services:
         limits:
           cpus: "0.1"
           memory: "50MB"
+
+volumes:
+  sockets:
 
 networks:
   backend:

@@ -5,7 +5,7 @@ Minha participação na [**Rinha de Backend 2025**](https://github.com/zanfrance
 ## 🔨 Tecnologias Utilizadas
 
 - [Rust](https://www.rust-lang.org/)
-- [Axum](https://github.com/tokio-rs/axum)
+- [Actix Web](https://actix.rs/)
 - [Nginx](https://nginx.org/)
 
 ## 🚚 Repositório

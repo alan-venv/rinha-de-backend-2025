@@ -71,7 +71,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(service.clone()))
     })
     .bind(("0.0.0.0", 8080))?
-    .workers(2)
+    .workers(1)
     .run()
     .await
 }

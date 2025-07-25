@@ -1,6 +1,6 @@
 services:
   nginx:
-    image: nginx:1.27.0-alpine
+    image: nginx:1.29.0-alpine
     container_name: rinha-nginx
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
@@ -21,7 +21,6 @@ services:
     build:
       context: ./gateway-async
     container_name: rinha-gateway-1
-    # As labels do Traefik foram removidas
     networks:
       - backend
       - payment-processor
@@ -30,14 +29,13 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.6" # <--- Mais CPU
-          memory: "125MB" # <--- Mais RAM
+          cpus: "0.6"
+          memory: "125MB"
 
   rinha-gateway-2:
     build:
       context: ./gateway-async
     container_name: rinha-gateway-2
-    # As labels do Traefik foram removidas
     networks:
       - backend
       - payment-processor
@@ -46,8 +44,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.6" # <--- Mais CPU
-          memory: "125MB" # <--- Mais RAM
+          cpus: "0.6"
+          memory: "125MB"
 
   rinha-db:
     build:

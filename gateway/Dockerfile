@@ -4,6 +4,6 @@ COPY . .
 RUN cargo build --release
 FROM gcr.io/distroless/cc-debian12
 WORKDIR /app
-COPY --from=builder /app/target/release/gateway-async .
+COPY --from=builder /app/target/release/gateway .
 EXPOSE 8080
-ENTRYPOINT [ "./gateway-async" ]
+ENTRYPOINT [ "./gateway" ]

@@ -18,7 +18,7 @@ services:
           memory: "50MB"
 
   rinha-gateway-1:
-    image: ghcr.io/alan-venv/rinha-gateway-async:3.0
+    image: ghcr.io/alan-venv/rinha-gateway-async:3.1
     container_name: rinha-gateway-1
     networks:
       - backend
@@ -32,7 +32,7 @@ services:
           memory: "125MB"
 
   rinha-gateway-2:
-    image: ghcr.io/alan-venv/rinha-gateway-async:3.0
+    image: ghcr.io/alan-venv/rinha-gateway-async:3.1
     container_name: rinha-gateway-2
     networks:
       - backend

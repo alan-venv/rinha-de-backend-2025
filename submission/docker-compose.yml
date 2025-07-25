@@ -1,70 +1,49 @@
 services:
-  traefik:
-    image: traefik:v3.4
-    container_name: rinha-traefik
-    command:
-      - "--global.sendanonymoususage=false"
-      - "--global.checknewversion=false"
-      - "--log.level=ERROR"
-      - "--accesslog=false"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
+  nginx:
+    image: nginx:1.29.0-alpine
+    container_name: rinha-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "9999:80"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
       - backend
+    depends_on:
+      - rinha-gateway-1
+      - rinha-gateway-2
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "50MB"
+
+  rinha-gateway-1:
+    image: ghcr.io/alan-venv/rinha-gateway-async:3.0
+    container_name: rinha-gateway-1
+    networks:
+      - backend
+      - payment-processor
+    depends_on:
+      - rinha-db
     deploy:
       resources:
         limits:
           cpus: "0.6"
-          memory: "180MB"
-
-  rinha-gateway-1:
-    image: ghcr.io/alan-venv/rinha-gateway-async:2.0
-    container_name: rinha-gateway-1
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=rinha-net"
-      - "traefik.http.routers.gateway.rule=Host(`localhost`)"
-      - "traefik.http.routers.gateway.entrypoints=web"
-      - "traefik.http.routers.gateway.service=gateway"
-      - "traefik.http.services.gateway.loadbalancer.server.port=8080"
-    networks:
-      - backend
-      - payment-processor
-    depends_on:
-      - traefik
-      - rinha-db
-    deploy:
-      resources:
-        limits:
-          cpus: "0.4"
-          memory: "60MB"
+          memory: "125MB"
 
   rinha-gateway-2:
-    image: ghcr.io/alan-venv/rinha-gateway-async:2.0
+    image: ghcr.io/alan-venv/rinha-gateway-async:3.0
     container_name: rinha-gateway-2
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=rinha-net"
-      - "traefik.http.routers.gateway.rule=Host(`localhost`)"
-      - "traefik.http.routers.gateway.entrypoints=web"
-      - "traefik.http.routers.gateway.service=gateway"
-      - "traefik.http.services.gateway.loadbalancer.server.port=8080"
     networks:
       - backend
       - payment-processor
     depends_on:
-      - traefik
       - rinha-db
     deploy:
       resources:
         limits:
-          cpus: "0.4"
-          memory: "60MB"
+          cpus: "0.6"
+          memory: "125MB"
 
   rinha-db:
     image: ghcr.io/alan-venv/rinha-database:1.0

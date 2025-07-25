@@ -120,6 +120,7 @@ async fn main() -> std::io::Result<()> {
     let default: DefaultStorage = web::Data::new(DefaultQueue(Arc::new(SegQueue::new())));
     let fallback: FallbackStorage = web::Data::new(FallbackQueue(Arc::new(SegQueue::new())));
 
+    println!("VERSION: 5");
     HttpServer::new(move || {
         App::new()
             .app_data(default.clone())

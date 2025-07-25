@@ -28,7 +28,7 @@ services:
 
   rinha-gateway-1:
     build:
-      context: ./gateway-async
+      context: ./gateway-sync
     container_name: rinha-gateway-1
     labels:
       - "traefik.enable=true"
@@ -51,7 +51,7 @@ services:
 
   rinha-gateway-2:
     build:
-      context: ./gateway-async
+      context: ./gateway-sync
     container_name: rinha-gateway-2
     labels:
       - "traefik.enable=true"

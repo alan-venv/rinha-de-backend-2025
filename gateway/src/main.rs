@@ -5,9 +5,11 @@ mod repository;
 mod service;
 mod utils;
 
-use actix_web::{
-    App, HttpResponse, HttpServer, Responder, get, post,
-    web::{Data, Json, Query},
+use axum::{
+    Json, Router,
+    extract::{Query, State},
+    http::StatusCode,
+    routing::{get, post},
 };
 use mimalloc::MiMalloc;
 use reqwest::Client;
@@ -18,39 +20,45 @@ static GLOBAL: MiMalloc = MiMalloc;
 use crate::{
     client::ProcessorClient,
     controller::Controller,
-    models::{PaymentRequest, SummaryQuery},
+    models::{PaymentRequest, SummaryQuery, SummaryResponse},
     repository::Repository,
     service::Service,
-    utils::{STRATEGY, WORKERS},
+    utils::{FRAMEWORK, OS_THREADS, STRATEGY, WORKERS},
 };
 
-#[post("/payments")]
-async fn payments(service: Data<Service>, request: Json<PaymentRequest>) -> impl Responder {
-    service.submit(request.0);
-    return HttpResponse::Accepted().finish();
+async fn payments(
+    State(state): State<AxumState>,
+    Json(request): Json<PaymentRequest>,
+) -> StatusCode {
+    state.service.submit(request);
+    return StatusCode::ACCEPTED;
 }
 
-#[post("/purge-payments")]
-async fn purge_payments(controller: Data<Controller>) -> impl Responder {
-    controller.purge_payments().await;
-    return HttpResponse::Ok().finish();
+async fn purge_payments(State(state): State<AxumState>) -> StatusCode {
+    state.controller.purge_payments().await;
+    return StatusCode::OK;
 }
 
-#[get("/payments-summary")]
 async fn payments_summary(
-    controller: Data<Controller>,
-    info: Query<SummaryQuery>,
-) -> impl Responder {
+    State(state): State<AxumState>,
+    Query(info): Query<SummaryQuery>,
+) -> (StatusCode, Json<SummaryResponse>) {
     if let (Some(from), Some(to)) = (info.from, info.to) {
-        let summary = controller.get_summary_from(from, to).await;
-        return HttpResponse::Ok().json(summary);
+        let summary = state.controller.get_summary_from(from, to).await;
+        return (StatusCode::OK, Json(summary));
     }
-    let summary = controller.get_summary().await;
-    return HttpResponse::Ok().json(summary);
+    let summary = state.controller.get_summary().await;
+    return (StatusCode::OK, Json(summary));
 }
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
+#[derive(Clone)]
+struct AxumState {
+    controller: Controller,
+    service: Service,
+}
+
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
     let reqwest = Client::new();
     let client = ProcessorClient::new(reqwest.clone());
     let repository = Repository::new(reqwest.clone());
@@ -58,20 +66,26 @@ async fn main() -> std::io::Result<()> {
     let service = Service::new(client.clone(), repository.clone());
     println!("STRATEGY: {}", STRATEGY);
     println!("WORKERS: {}", WORKERS);
+    println!("FRAMEWORK: {}", FRAMEWORK);
+    println!("OS_THREADS: {}", OS_THREADS);
 
     service.initialize_dispatcher();
     service.initialize_workers();
 
-    HttpServer::new(move || {
-        App::new()
-            .service(payments)
-            .service(purge_payments)
-            .service(payments_summary)
-            .app_data(Data::new(controller.clone()))
-            .app_data(Data::new(service.clone()))
-    })
-    .bind(("0.0.0.0", 8080))?
-    .workers(1)
-    .run()
-    .await
+    let state = AxumState {
+        controller: controller,
+        service: service,
+    };
+
+    let app = Router::new()
+        .route("/payments", post(payments))
+        .route("/purge-payments", post(purge_payments))
+        .route("/payments-summary", get(payments_summary))
+        .with_state(state);
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+
+    // Obs: Actix Web SEMPRE inicializa no mínimo 3 threads de SO causando muito overhead de troca de contexto já que a aplicação não tem 3 núcleos de CPU.
+    // Por isso que, para este desafio especifico, trocar para Axum e deixar o Tokio fazer sua mágica dentro de uma única thread de SO é extremamente necessário.
 }

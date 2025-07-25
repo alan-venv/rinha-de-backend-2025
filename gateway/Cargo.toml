@@ -1,5 +1,5 @@
 [package]
-name = "gateway-async"
+name = "gateway"
 version = "0.1.0"
 edition = "2024"
 
@@ -13,3 +13,4 @@ uuid = { version = "1.17.0", features = ["v4", "serde"] }
 crossbeam-queue = "0.3.12"
 async-channel = "2.5.0"
 mimalloc = "0.1.47"
+axum = "0.8.4"

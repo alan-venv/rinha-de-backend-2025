@@ -1,4 +1,13 @@
-use actix_web::{App, HttpResponse, HttpServer, Responder, web};
+use axum::{
+    Json, Router,
+    extract::{Query, State},
+    http::StatusCode,
+    routing::{get, post},
+};
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 use chrono::{DateTime, Utc};
 use crossbeam_queue::SegQueue;
@@ -12,14 +21,20 @@ struct Request {
     requested_at: DateTime<Utc>,
 }
 
-async fn insert_default(storage: DefaultStorage, request: web::Json<Request>) -> impl Responder {
-    storage.0.push(request.into_inner());
-    HttpResponse::Ok()
+async fn insert_default(
+    State(state): State<AxumState>,
+    Json(request): Json<Request>,
+) -> StatusCode {
+    state.default_storage.push(request);
+    return StatusCode::OK;
 }
 
-async fn insert_fallback(storage: FallbackStorage, request: web::Json<Request>) -> impl Responder {
-    storage.0.push(request.into_inner());
-    HttpResponse::Ok()
+async fn insert_fallback(
+    State(state): State<AxumState>,
+    Json(request): Json<Request>,
+) -> StatusCode {
+    state.fallback_sorage.push(request);
+    return StatusCode::OK;
 }
 
 #[derive(Serialize)]
@@ -51,16 +66,15 @@ struct SummaryQuery {
 }
 
 async fn summary(
-    default: DefaultStorage,
-    fallback: FallbackStorage,
-    query: web::Query<SummaryQuery>,
-) -> impl Responder {
+    State(state): State<AxumState>,
+    Query(query): Query<SummaryQuery>,
+) -> (StatusCode, Json<Response>) {
     let mut default_items = Vec::new();
-    while let Some(req) = default.0.pop() {
+    while let Some(req) = state.default_storage.pop() {
         default_items.push(req);
     }
     let mut fallback_items = Vec::new();
-    while let Some(req) = fallback.0.pop() {
+    while let Some(req) = state.fallback_sorage.pop() {
         fallback_items.push(req);
     }
 
@@ -87,50 +101,46 @@ async fn summary(
     }
 
     for item in default_items {
-        default.0.push(item);
+        state.default_storage.push(item);
     }
     for item in fallback_items {
-        fallback.0.push(item);
+        state.fallback_sorage.push(item);
     }
 
     let response = Response {
         default: default_summary,
         fallback: fallback_summary,
     };
-    return HttpResponse::Ok().json(response);
+    return (StatusCode::OK, Json(response));
 }
 
-async fn purge_payments(fs: FallbackStorage, ds: DefaultStorage) -> impl Responder {
-    while fs.0.pop().is_some() {}
-    while ds.0.pop().is_some() {}
-    HttpResponse::Ok()
+async fn purge_payments(State(state): State<AxumState>) -> StatusCode {
+    while state.default_storage.pop().is_some() {}
+    while state.fallback_sorage.pop().is_some() {}
+    return StatusCode::OK;
 }
 
 #[derive(Clone)]
-struct DefaultQueue(Arc<SegQueue<Request>>);
+struct AxumState {
+    default_storage: Arc<SegQueue<Request>>,
+    fallback_sorage: Arc<SegQueue<Request>>,
+}
 
-#[derive(Clone)]
-struct FallbackQueue(Arc<SegQueue<Request>>);
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
+    let state = AxumState {
+        default_storage: Arc::new(SegQueue::new()),
+        fallback_sorage: Arc::new(SegQueue::new()),
+    };
+    println!("VERSION: 2.0");
 
-type DefaultStorage = web::Data<DefaultQueue>;
-type FallbackStorage = web::Data<FallbackQueue>;
+    let app = Router::new()
+        .route("/summary", get(summary))
+        .route("/payments/default", post(insert_default))
+        .route("/payments/fallback", post(insert_fallback))
+        .route("/purge-payments", post(purge_payments))
+        .with_state(state);
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let default: DefaultStorage = web::Data::new(DefaultQueue(Arc::new(SegQueue::new())));
-    let fallback: FallbackStorage = web::Data::new(FallbackQueue(Arc::new(SegQueue::new())));
-
-    HttpServer::new(move || {
-        App::new()
-            .app_data(default.clone())
-            .app_data(fallback.clone())
-            .route("/summary", web::get().to(summary))
-            .route("/payments/default", web::post().to(insert_default))
-            .route("/payments/fallback", web::post().to(insert_fallback))
-            .route("/purge-payments", web::post().to(purge_payments))
-    })
-    .bind(("0.0.0.0", 8080))?
-    .workers(1)
-    .run()
-    .await
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }

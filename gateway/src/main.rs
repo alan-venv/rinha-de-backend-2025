@@ -63,7 +63,7 @@ async fn main() {
     let repository = Repository::new(reqwest.clone());
     let controller = Controller::new(repository.clone());
     let service = Service::new(client.clone(), repository.clone());
-    println!("VERSION: 4.0");
+    println!("VERSION: 4.2");
 
     service.initialize_dispatcher();
     service.initialize_workers();

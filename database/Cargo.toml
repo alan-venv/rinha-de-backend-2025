@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-actix-web = "4.11.0"
+axum = "0.8.4"
+tokio = "1.46.1"
+mimalloc = "0.1.47"
 crossbeam-queue = "0.3.12"
 chrono = { version = "0.4.41", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }

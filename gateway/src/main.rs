@@ -55,7 +55,7 @@ async fn main() -> std::io::Result<()> {
     let repository = Repository::new(umbral_socket.clone());
     let controller = Controller::new(repository.clone());
     let service = Service::new(client.clone(), repository.clone());
-    println!("VERSION: 6");
+    println!("VERSION: 6.1");
 
     service.initialize_dispatcher();
     service.initialize_workers();

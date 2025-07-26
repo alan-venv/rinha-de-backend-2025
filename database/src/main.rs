@@ -122,7 +122,7 @@ type FallbackStorage = web::Data<FallbackQueue>;
 async fn main() -> std::io::Result<()> {
     let default: DefaultStorage = web::Data::new(DefaultQueue(Arc::new(SegQueue::new())));
     let fallback: FallbackStorage = web::Data::new(FallbackQueue(Arc::new(SegQueue::new())));
-    println!("VERSION: 6");
+    println!("VERSION: 6.1");
 
     let path = env::var("SOCKET_PATH").unwrap();
     let socket = Path::new(&path);

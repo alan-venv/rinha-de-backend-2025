@@ -1,21 +1,33 @@
-# 🦀 Payment Processing System
+# Payment Processing System
 
-Minha participação na [**Rinha de Backend 2025**](https://github.com/zanfranceschi/rinha-de-backend-2025)
+Este projeto é uma implementação de um sistema de processamento de pagamentos desenvolvido para a [Rinha de Backend 2025](https://github.com/zanfranceschi/rinha-de-backend-2025).
 
-## 🔨 Tecnologias Utilizadas
+## Tech Stack
 
-- [Rust](https://www.rust-lang.org/)
-- [Actix Web](https://actix.rs/)
-- [Nginx](https://nginx.org/)
+* **Linguagem:** Rust
+* **Framework Web:** Actix Web
+* **Proxy Reverso:** Nginx
 
-## 🚚 Repositório
-- [GitHub](https://github.com/alan-venv/rinha-de-backend-2025)
+## Pré-requisitos
 
-## 🚀 Como rodar
+* [Git](https://git-scm.com/)
+* [Docker](https://www.docker.com/)
 
-```bash
-git clone https://github.com/alan-venv/rinha-de-backend-2025
-cd rinha-de-backend-2025
-docker compose -f resources/payment-processor.yml up -d --build
-docker compose up -d --build
-```
+## Executando o Projeto
+
+Siga os passos abaixo para executar a aplicação localmente.
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/alan-venv/rinha-de-backend-2025](https://github.com/alan-venv/rinha-de-backend-2025)
+    cd rinha-de-backend-2025
+    ```
+
+2.  **Inicie os containeres:**
+    ```bash
+    docker compose up -d --build
+    ```
+
+## Código Fonte
+
+O código fonte completo está disponível neste repositório do GitHub.

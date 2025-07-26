@@ -17,8 +17,6 @@ cd rinha-de-backend-2025
 docker compose up -d --build
 ```
 
-
-
 ## ✨ Repositório no GitHub
 
 Curtiu? Dê uma olhada no [código fonte](https://github.com/alan-venv/rinha-de-backend-2025) e deixe uma ⭐!

@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use crossbeam_queue::SegQueue;
 use mimalloc::MiMalloc;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::{env, os::unix::fs::PermissionsExt, path::Path, sync::Arc};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -122,9 +122,15 @@ type FallbackStorage = web::Data<FallbackQueue>;
 async fn main() -> std::io::Result<()> {
     let default: DefaultStorage = web::Data::new(DefaultQueue(Arc::new(SegQueue::new())));
     let fallback: FallbackStorage = web::Data::new(FallbackQueue(Arc::new(SegQueue::new())));
-
     println!("VERSION: 5.1");
-    HttpServer::new(move || {
+
+    let path = env::var("SOCKET_PATH").unwrap();
+    let socket = Path::new(&path);
+    if socket.exists() {
+        let _ = std::fs::remove_file(socket);
+    }
+
+    let server = HttpServer::new(move || {
         App::new()
             .app_data(default.clone())
             .app_data(fallback.clone())
@@ -133,8 +139,11 @@ async fn main() -> std::io::Result<()> {
             .route("/payments/fallback", web::post().to(insert_fallback))
             .route("/purge-payments", web::post().to(purge_payments))
     })
-    .bind(("0.0.0.0", 8080))?
     .workers(1)
-    .run()
-    .await
+    .bind_uds(socket)?;
+
+    let permissions = std::fs::Permissions::from_mode(0o766);
+    std::fs::set_permissions(path, permissions)?;
+
+    server.run().await
 }

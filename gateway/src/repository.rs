@@ -3,42 +3,47 @@ use std::time::Duration;
 use chrono::{DateTime, Utc};
 use reqwest::Client;
 use tokio::time::sleep;
+use umbral_socket::UmbralClient;
 
 use crate::models::{PaymentProcessorRequest, SummaryResponse};
 
 #[derive(Clone)]
 pub struct Repository {
     client: Client,
+    umbral_client: UmbralClient,
 }
 type Data = DateTime<Utc>;
 
 impl Repository {
-    pub fn new(client: Client) -> Repository {
-        return Repository { client };
+    pub fn new(client: Client, umbral_client: UmbralClient) -> Repository {
+        return Repository {
+            client,
+            umbral_client,
+        };
     }
 
     pub async fn insert_default(&self, request: &PaymentProcessorRequest) {
-        let url = "http://rinha-db:8080/payments/default";
-        let response = self.client.post(url).json(request).send().await;
+        let endpoint = "/payments/default";
+        let response = self.umbral_client.post_raw(endpoint, request).await;
         if let Err(_) = response {
-            println!("FAILED TO INSERT PAYMENT");
+            println!("Failed to insert payment");
         }
     }
 
     #[allow(dead_code)]
     pub async fn insert_fallback(&self, request: &PaymentProcessorRequest) {
-        let url = "http://rinha-db:8080/payments/fallback";
-        let response = self.client.post(url).json(request).send().await;
+        let endpoint = "/payments/fallback";
+        let response = self.umbral_client.post_raw(endpoint, request).await;
         if let Err(_) = response {
-            println!("FAILED TO INSERT PAYMENT");
+            println!("Failed to insert payment");
         }
     }
 
     pub async fn purge_payments(&self) {
-        let url = "http://rinha-db:8080/purge-payments";
-        let response = self.client.post(url).send().await;
+        let endpoint = "/purge-payments";
+        let response = self.umbral_client.post_trigger(endpoint).await;
         if let Err(_) = response {
-            println!("FAILED TO PURGE PAYMENTS");
+            println!("Failed to purge payments");
         }
     }
 

@@ -13,6 +13,7 @@ use actix_web::{
 };
 use mimalloc::MiMalloc;
 use reqwest::Client;
+use umbral_socket::UmbralClient;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -53,8 +54,9 @@ async fn payments_summary(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let reqwest = Client::new();
+    let umbral_client = UmbralClient::new("/sockets/database.sock");
     let client = ProcessorClient::new(reqwest.clone());
-    let repository = Repository::new(reqwest.clone());
+    let repository = Repository::new(reqwest.clone(), umbral_client.clone());
     let controller = Controller::new(repository.clone());
     let service = Service::new(client.clone(), repository.clone());
     println!("VERSION: 5");
@@ -75,6 +77,7 @@ async fn main() -> std::io::Result<()> {
             .service(payments_summary)
             .app_data(Data::new(controller.clone()))
             .app_data(Data::new(service.clone()))
+            .app_data(Data::new(umbral_client.clone()))
     })
     .workers(1)
     .bind_uds(socket)?;

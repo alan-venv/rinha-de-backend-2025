@@ -20,7 +20,8 @@ services:
 
   rinha-gateway-1:
     build:
-      context: ./gateway
+      context: .
+      dockerfile: ./gateway/Dockerfile
     container_name: rinha-gateway-1
     volumes:
       - sockets:/sockets:rw
@@ -39,7 +40,8 @@ services:
 
   rinha-gateway-2:
     build:
-      context: ./gateway
+      context: .
+      dockerfile: ./gateway/Dockerfile
     container_name: rinha-gateway-2
     volumes:
       - sockets:/sockets:rw
@@ -58,8 +60,13 @@ services:
 
   rinha-db:
     build:
-      context: ./database
+      context: .
+      dockerfile: ./database/Dockerfile
     container_name: rinha-db
+    volumes:
+      - sockets:/sockets:rw
+    environment:
+      - SOCKET_PATH=/sockets/database.sock
     networks:
       - backend
       - payment-processor

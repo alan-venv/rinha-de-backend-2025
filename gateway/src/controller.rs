@@ -6,7 +6,8 @@ use crate::{models::SummaryResponse, repository::Repository};
 pub struct Controller {
     repository: Repository,
 }
-type Data = DateTime<Utc>;
+
+type Data = Option<DateTime<Utc>>;
 
 impl Controller {
     pub fn new(repository: Repository) -> Controller {
@@ -19,11 +20,7 @@ impl Controller {
         self.repository.purge_payments().await;
     }
 
-    pub async fn get_summary(&self) -> SummaryResponse {
-        return self.repository.get_summary().await;
-    }
-
-    pub async fn get_summary_from(&self, from: Data, to: Data) -> SummaryResponse {
-        return self.repository.get_summary_from(from, to).await;
+    pub async fn get_summary(&self, from: Data, to: Data) -> SummaryResponse {
+        return self.repository.get_summary(from, to).await;
     }
 }

@@ -13,4 +13,4 @@ chrono = { version = "0.4.41", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 reqwest = { version = "0.12.22", features = ["json"] }
 uuid = { version = "1.17.0", features = ["v4", "serde"] }
-umbral-socket = { path = "./../umbral-socket" }
+umbral-socket = "0.1.2"

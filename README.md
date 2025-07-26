@@ -8,18 +8,15 @@ Essa é a minha participação na lendária [**Rinha de Backend 2025**](https://
 * **Actix Web** 🕸️ - Para APIs ridiculamente rápidas.
 * **Nginx** 🚦 - O porteiro mais confiável da web.
 
-## 🚀 Como Rodar Essa Máquina
+## 🚀 Como Rodar
 
-1.  **Clone essa belezinha:**
-    ```bash
-    git clone https://github.com/alan-venv/rinha-de-backend-2025
-    cd rinha-de-backend-2025
-    ```
+**Suba tudo com Docker!** 🐳
+```bash
+git clone https://github.com/alan-venv/rinha-de-backend-2025
+cd rinha-de-backend-2025
+docker compose up -d --build
+```
 
-2.  **Suba tudo com Docker!** 🐳
-    ```bash
-    docker compose up -d --build
-    ```
 
 
 ## ✨ Repositório no GitHub

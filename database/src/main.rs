@@ -1,9 +1,12 @@
 use actix_web::{App, HttpResponse, HttpServer, Responder, web};
-
 use chrono::{DateTime, Utc};
 use crossbeam_queue::SegQueue;
+use mimalloc::MiMalloc;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 #[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -120,7 +123,7 @@ async fn main() -> std::io::Result<()> {
     let default: DefaultStorage = web::Data::new(DefaultQueue(Arc::new(SegQueue::new())));
     let fallback: FallbackStorage = web::Data::new(FallbackQueue(Arc::new(SegQueue::new())));
 
-    println!("VERSION: 5");
+    println!("VERSION: 5.1");
     HttpServer::new(move || {
         App::new()
             .app_data(default.clone())

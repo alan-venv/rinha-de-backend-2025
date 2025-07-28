@@ -53,13 +53,13 @@ impl Service {
         tokio::spawn(async move {
             let mut interval = time::interval(Duration::from_secs(1));
             loop {
-                if let Some(request) = queue.pop() {
+                if let Some(mut request) = queue.pop() {
+                    request.insert_date();
                     let instant = Instant::now();
-                    let req = request.to_processor();
-                    let success = client.capture_default(&req).await;
+                    let success = client.capture_default(&request).await;
                     let duration = instant.elapsed().as_millis();
                     if success {
-                        repository.insert_default(&req).await;
+                        repository.insert_default(&request).await;
                         if duration <= TRIGGER {
                             health.store(true, Ordering::Relaxed);
                             loop {
@@ -73,6 +73,7 @@ impl Service {
                             }
                         }
                     } else {
+                        request.remove_date();
                         queue.push(request);
                     }
                 }
@@ -90,15 +91,16 @@ impl Service {
             let health = self.default_health.clone();
 
             tokio::spawn(async move {
-                while let Ok(request) = receiver.recv().await {
+                while let Ok(mut request) = receiver.recv().await {
                     if health.load(Ordering::Relaxed) {
+                        request.insert_date();
                         let instant = Instant::now();
-                        let req = request.to_processor();
-                        let success = client.capture_default(&req).await;
+                        let success = client.capture_default(&request).await;
                         let duration = instant.elapsed().as_millis();
                         if success {
-                            repository.insert_default(&req).await;
+                            repository.insert_default(&request).await;
                         } else {
+                            request.remove_date();
                             queue.push(request);
                         }
                         if !success || duration > TRIGGER {

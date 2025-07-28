@@ -2,29 +2,22 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PaymentRequest {
     pub correlation_id: Uuid,
     pub amount: f64,
+    pub requested_at: Option<DateTime<Utc>>,
 }
 
 impl PaymentRequest {
-    pub fn to_processor(&self) -> PaymentProcessorRequest {
-        PaymentProcessorRequest {
-            correlation_id: self.correlation_id.clone(),
-            amount: self.amount,
-            requested_at: Utc::now(),
-        }
+    pub fn insert_date(&mut self) {
+        self.requested_at = Some(Utc::now())
     }
-}
 
-#[derive(Serialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct PaymentProcessorRequest {
-    pub correlation_id: Uuid,
-    pub amount: f64,
-    pub requested_at: DateTime<Utc>,
+    pub fn remove_date(&mut self) {
+        self.requested_at = None
+    }
 }
 
 #[derive(Serialize, Deserialize)]

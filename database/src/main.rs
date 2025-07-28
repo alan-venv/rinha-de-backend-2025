@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use crossbeam_queue::SegQueue;
 use mimalloc::MiMalloc;
 use serde::{Deserialize, Serialize};
-use std::{env, os::unix::fs::PermissionsExt, path::Path, sync::Arc};
+use std::{os::unix::fs::PermissionsExt, path::Path, sync::Arc};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;

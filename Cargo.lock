@@ -515,7 +515,6 @@ dependencies = [
  "crossbeam-queue",
  "mimalloc",
  "serde",
- "tokio",
 ]
 
 [[package]]

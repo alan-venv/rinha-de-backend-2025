@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-tokio = "1.46.1"
 mimalloc = "0.1.47"
 actix-web = "4.11.0"
 crossbeam-queue = "0.3.12"

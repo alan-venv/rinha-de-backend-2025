@@ -124,8 +124,7 @@ async fn main() -> std::io::Result<()> {
     let fallback: FallbackStorage = web::Data::new(FallbackQueue(Arc::new(SegQueue::new())));
     println!("VERSION: 6.1");
 
-    let path = env::var("SOCKET_PATH").unwrap();
-    let socket = Path::new(&path);
+    let socket = Path::new("/sockets/database.sock");
     if socket.exists() {
         let _ = std::fs::remove_file(socket);
     }
@@ -143,7 +142,7 @@ async fn main() -> std::io::Result<()> {
     .bind_uds(socket)?;
 
     let permissions = std::fs::Permissions::from_mode(0o766);
-    std::fs::set_permissions(path, permissions)?;
+    std::fs::set_permissions(socket, permissions)?;
 
     server.run().await
 }

@@ -62,8 +62,6 @@ services:
     container_name: rinha-db
     volumes:
       - sockets:/sockets:rw
-    environment:
-      - SOCKET_PATH=/sockets/database.sock
     networks:
       - backend
       - payment-processor

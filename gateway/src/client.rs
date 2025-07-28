@@ -1,6 +1,6 @@
 use reqwest::Client;
 
-use crate::models::PaymentProcessorRequest;
+use crate::models::PaymentRequest;
 
 #[derive(Clone)]
 pub struct ProcessorClient {
@@ -12,7 +12,7 @@ impl ProcessorClient {
         return ProcessorClient { client: client };
     }
 
-    pub async fn capture_default(&self, request: &PaymentProcessorRequest) -> bool {
+    pub async fn capture_default(&self, request: &PaymentRequest) -> bool {
         let url = "http://payment-processor-default:8080/payments";
         let response = self.client.post(url).json(&request).send().await;
         if let Ok(data) = response {
@@ -22,7 +22,7 @@ impl ProcessorClient {
     }
 
     #[allow(dead_code)]
-    pub async fn capture_fallback(&self, request: &PaymentProcessorRequest) -> bool {
+    pub async fn capture_fallback(&self, request: &PaymentRequest) -> bool {
         let url = "http://payment-processor-fallback:8080/payments";
         let response = self.client.post(url).json(&request).send().await;
         if let Ok(data) = response {

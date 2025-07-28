@@ -4,7 +4,7 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use tokio::time::sleep;
 use umbral_socket::UmbralSocket;
 
-use crate::models::{PaymentProcessorRequest, SummaryResponse};
+use crate::models::{PaymentRequest, SummaryResponse};
 
 #[derive(Clone)]
 pub struct Repository {
@@ -18,7 +18,7 @@ impl Repository {
         return Repository { socket };
     }
 
-    pub async fn insert_default(&self, request: &PaymentProcessorRequest) {
+    pub async fn insert_default(&self, request: &PaymentRequest) {
         let endpoint = "/payments/default";
         let response = self.socket.post_raw(endpoint, request).await;
         if let Err(_) = response {
@@ -27,7 +27,7 @@ impl Repository {
     }
 
     #[allow(dead_code)]
-    pub async fn insert_fallback(&self, request: &PaymentProcessorRequest) {
+    pub async fn insert_fallback(&self, request: &PaymentRequest) {
         let endpoint = "/payments/fallback";
         let response = self.socket.post_raw(endpoint, request).await;
         if let Err(_) = response {

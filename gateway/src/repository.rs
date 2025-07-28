@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use bytes::Bytes;
 use chrono::{DateTime, SecondsFormat, Utc};
 use tokio::time::sleep;
 use umbral_socket::UmbralSocket;
@@ -18,9 +19,9 @@ impl Repository {
         return Repository { socket };
     }
 
-    pub async fn insert_default(&self, request: &PaymentRequest) {
+    pub async fn insert_default(&self, request: Bytes) {
         let endpoint = "/payments/default";
-        let response = self.socket.post_raw(endpoint, request).await;
+        let response = self.socket.post_raw_bytes(endpoint, request).await;
         if let Err(_) = response {
             println!("Failed to insert payment");
         }

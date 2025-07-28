@@ -1,3 +1,4 @@
+use bytes::Bytes;
 use reqwest::Client;
 
 use crate::models::PaymentRequest;
@@ -12,9 +13,15 @@ impl ProcessorClient {
         return ProcessorClient { client: client };
     }
 
-    pub async fn capture_default(&self, request: &PaymentRequest) -> bool {
+    pub async fn capture_default(&self, request: Bytes) -> bool {
         let url = "http://payment-processor-default:8080/payments";
-        let response = self.client.post(url).json(&request).send().await;
+        let response = self
+            .client
+            .post(url)
+            .header("Content-Type", "application/json")
+            .body(request)
+            .send()
+            .await;
         if let Ok(data) = response {
             return data.status().is_success();
         }
@@ -24,7 +31,13 @@ impl ProcessorClient {
     #[allow(dead_code)]
     pub async fn capture_fallback(&self, request: &PaymentRequest) -> bool {
         let url = "http://payment-processor-fallback:8080/payments";
-        let response = self.client.post(url).json(&request).send().await;
+        let response = self
+            .client
+            .post(url)
+            .header("Content-Type", "application/json")
+            .json(&request)
+            .send()
+            .await;
         if let Ok(data) = response {
             return data.status().is_success();
         }

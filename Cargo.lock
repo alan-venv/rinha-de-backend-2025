@@ -657,6 +657,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "async-channel",
+ "bytes",
  "chrono",
  "crossbeam-queue",
  "mimalloc",
@@ -1990,9 +1991,9 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "umbral-socket"
-version = "0.1.2"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15759ddf5c1bf81f7fa400614786aef2a91ad23ebcf810d4325beeca678c1bd8"
+checksum = "f28749c75972df5228877268b9c9b02ee820c263b73258aa2f23d17efb0ac4d7"
 dependencies = [
  "http-body-util",
  "hyper",

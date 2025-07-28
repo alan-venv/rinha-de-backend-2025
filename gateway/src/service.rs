@@ -1,4 +1,7 @@
 use async_channel::{Receiver, Sender, unbounded};
+use bytes::BufMut;
+use bytes::{Bytes, BytesMut};
+use chrono::Utc;
 use crossbeam_queue::SegQueue;
 use std::time::Instant;
 use std::{
@@ -11,7 +14,7 @@ use std::{
 use tokio::time;
 
 use crate::utils::{TRIGGER, WORKERS};
-use crate::{client::ProcessorClient, models::PaymentRequest, repository::Repository};
+use crate::{client::ProcessorClient, repository::Repository};
 
 #[derive(Clone)]
 pub struct Service {
@@ -20,14 +23,15 @@ pub struct Service {
     default_health: Arc<AtomicBool>,
     #[allow(dead_code)]
     fallback_health: Arc<AtomicBool>,
-    queue: Arc<SegQueue<PaymentRequest>>,
-    sender: Sender<PaymentRequest>,
-    receiver: Receiver<PaymentRequest>,
+    queue: Arc<SegQueue<Bytes>>,
+    sender: Sender<Bytes>,
+    receiver: Receiver<Bytes>,
 }
 
 impl Service {
     pub fn new(client: ProcessorClient, repository: Repository) -> Service {
-        let (sender, receiver) = unbounded::<PaymentRequest>();
+        let (sender, receiver) = unbounded::<Bytes>();
+
         return Service {
             client: client,
             repository: repository,
@@ -39,7 +43,7 @@ impl Service {
         };
     }
 
-    pub fn submit(&self, request: PaymentRequest) {
+    pub fn submit(&self, request: Bytes) {
         self.queue.push(request);
     }
 
@@ -52,14 +56,27 @@ impl Service {
 
         tokio::spawn(async move {
             let mut interval = time::interval(Duration::from_secs(1));
+            let mut buffer = BytesMut::with_capacity(128);
+
             loop {
-                if let Some(mut request) = queue.pop() {
-                    request.insert_date();
+                if let Some(request) = queue.pop() {
+                    buffer.clear();
+                    let brace_pos = request.iter().rposition(|&b| b == b'}').unwrap();
+                    buffer.put(request.slice(..brace_pos));
+                    buffer.put_slice(b",\"requestedAt\":\"");
+                    buffer.put_slice(
+                        Utc::now()
+                            .format("%Y-%m-%dT%H:%M:%S.%3fZ")
+                            .to_string()
+                            .as_bytes(),
+                    );
+                    buffer.put_slice(b"\"}");
+                    let json = Bytes::copy_from_slice(&buffer);
                     let instant = Instant::now();
-                    let success = client.capture_default(&request).await;
+                    let success = client.capture_default(json.clone()).await;
                     let duration = instant.elapsed().as_millis();
                     if success {
-                        repository.insert_default(&request).await;
+                        repository.insert_default(json.clone()).await;
                         if duration <= TRIGGER {
                             health.store(true, Ordering::Relaxed);
                             loop {
@@ -73,7 +90,6 @@ impl Service {
                             }
                         }
                     } else {
-                        request.remove_date();
                         queue.push(request);
                     }
                 }
@@ -91,16 +107,22 @@ impl Service {
             let health = self.default_health.clone();
 
             tokio::spawn(async move {
-                while let Ok(mut request) = receiver.recv().await {
+                let mut buffer = BytesMut::with_capacity(128);
+                while let Ok(request) = receiver.recv().await {
                     if health.load(Ordering::Relaxed) {
-                        request.insert_date();
+                        buffer.clear();
+                        let brace_pos = request.iter().rposition(|&b| b == b'}').unwrap();
+                        buffer.put(request.slice(..brace_pos));
+                        buffer.put_slice(b",\"requestedAt\":\"");
+                        buffer.put_slice(Utc::now().to_rfc3339().as_bytes());
+                        buffer.put_slice(b"\"}");
+                        let json = Bytes::copy_from_slice(&buffer);
                         let instant = Instant::now();
-                        let success = client.capture_default(&request).await;
+                        let success = client.capture_default(json.clone()).await;
                         let duration = instant.elapsed().as_millis();
                         if success {
-                            repository.insert_default(&request).await;
+                            repository.insert_default(json.clone()).await;
                         } else {
-                            request.remove_date();
                             queue.push(request);
                         }
                         if !success || duration > TRIGGER {

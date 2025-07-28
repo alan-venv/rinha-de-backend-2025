@@ -10,23 +10,13 @@ pub struct PaymentRequest {
     pub requested_at: Option<DateTime<Utc>>,
 }
 
-impl PaymentRequest {
-    pub fn insert_date(&mut self) {
-        self.requested_at = Some(Utc::now())
-    }
-
-    pub fn remove_date(&mut self) {
-        self.requested_at = None
-    }
-}
-
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SummaryResponse {
     pub default: SummaryOrigin,
     pub fallback: SummaryOrigin,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SummaryOrigin {
     pub total_requests: usize,
@@ -40,7 +30,7 @@ pub struct ServiceHealthResponse {
     pub min_response_time: usize,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct SummaryQuery {
     pub from: Option<DateTime<Utc>>,
     pub to: Option<DateTime<Utc>>,

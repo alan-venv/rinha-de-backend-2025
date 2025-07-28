@@ -9,7 +9,7 @@ use std::{env, os::unix::fs::PermissionsExt, path::Path};
 
 use actix_web::{
     App, HttpResponse, HttpServer, Responder, get, post,
-    web::{Data, Json, Query},
+    web::{Bytes, Data, Query},
 };
 use mimalloc::MiMalloc;
 use reqwest::Client;
@@ -19,16 +19,13 @@ use umbral_socket::UmbralSocket;
 static GLOBAL: MiMalloc = MiMalloc;
 
 use crate::{
-    client::ProcessorClient,
-    controller::Controller,
-    models::{PaymentRequest, SummaryQuery},
-    repository::Repository,
-    service::Service,
+    client::ProcessorClient, controller::Controller, models::SummaryQuery, repository::Repository,
+    service::Service, utils::WORKERS,
 };
 
 #[post("/payments")]
-async fn payments(service: Data<Service>, request: Json<PaymentRequest>) -> impl Responder {
-    service.submit(request.0);
+async fn payments(service: Data<Service>, request: Bytes) -> impl Responder {
+    service.submit(Bytes::copy_from_slice(&request));
     return HttpResponse::Accepted().finish();
 }
 
@@ -55,7 +52,8 @@ async fn main() -> std::io::Result<()> {
     let repository = Repository::new(umbral_socket.clone());
     let controller = Controller::new(repository.clone());
     let service = Service::new(client.clone(), repository.clone());
-    println!("VERSION: 6.2");
+    println!("VERSION: 6.3");
+    println!("{}", WORKERS);
 
     service.initialize_dispatcher();
     service.initialize_workers();

@@ -1864,7 +1864,19 @@ dependencies = [
  "signal-hook-registry",
  "slab",
  "socket2",
+ "tokio-macros",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e06d43f1345a3bcd39f6a56dbb7dcab2ba47e68e8ac134855e7e2bdbaf8cab8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1991,10 +2003,12 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "umbral-socket"
-version = "0.1.4"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f28749c75972df5228877268b9c9b02ee820c263b73258aa2f23d17efb0ac4d7"
+checksum = "5932f5cda9d1fc7107c0c6eeb256a362b8d84a9dd88118bcb1803413b474dcf9"
 dependencies = [
+ "bytes",
+ "crossbeam-queue",
  "http-body-util",
  "hyper",
  "hyper-util",

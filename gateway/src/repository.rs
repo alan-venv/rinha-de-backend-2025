@@ -3,19 +3,19 @@ use std::time::Duration;
 use bytes::Bytes;
 use chrono::{DateTime, SecondsFormat, Utc};
 use tokio::time::sleep;
-use umbral_socket::UmbralSocket;
+use umbral_socket::SocketClient;
 
 use crate::models::{PaymentRequest, SummaryResponse};
 
 #[derive(Clone)]
 pub struct Repository {
-    socket: UmbralSocket,
+    socket: SocketClient,
 }
 
 type Data = Option<DateTime<Utc>>;
 
 impl Repository {
-    pub fn new(socket: UmbralSocket) -> Repository {
+    pub fn new(socket: SocketClient) -> Repository {
         return Repository { socket };
     }
 

@@ -60,18 +60,7 @@ impl Service {
 
             loop {
                 if let Some(request) = queue.pop() {
-                    buffer.clear();
-                    let brace_pos = request.iter().rposition(|&b| b == b'}').unwrap();
-                    buffer.put(request.slice(..brace_pos));
-                    buffer.put_slice(b",\"requestedAt\":\"");
-                    buffer.put_slice(
-                        Utc::now()
-                            .format("%Y-%m-%dT%H:%M:%S.%3fZ")
-                            .to_string()
-                            .as_bytes(),
-                    );
-                    buffer.put_slice(b"\"}");
-                    let json = Bytes::copy_from_slice(&buffer);
+                    let json = Service::enrich_json(&mut buffer, &request).await;
                     let instant = Instant::now();
                     let success = client.capture_default(json.clone()).await;
                     let duration = instant.elapsed().as_millis();
@@ -110,13 +99,7 @@ impl Service {
                 let mut buffer = BytesMut::with_capacity(128);
                 while let Ok(request) = receiver.recv().await {
                     if health.load(Ordering::Relaxed) {
-                        buffer.clear();
-                        let brace_pos = request.iter().rposition(|&b| b == b'}').unwrap();
-                        buffer.put(request.slice(..brace_pos));
-                        buffer.put_slice(b",\"requestedAt\":\"");
-                        buffer.put_slice(Utc::now().to_rfc3339().as_bytes());
-                        buffer.put_slice(b"\"}");
-                        let json = Bytes::copy_from_slice(&buffer);
+                        let json = Service::enrich_json(&mut buffer, &request).await;
                         let instant = Instant::now();
                         let success = client.capture_default(json.clone()).await;
                         let duration = instant.elapsed().as_millis();
@@ -134,5 +117,16 @@ impl Service {
                 }
             });
         }
+    }
+
+    async fn enrich_json(buffer: &mut BytesMut, request: &Bytes) -> Bytes {
+        buffer.clear();
+        let brace_pos = request.iter().rposition(|&b| b == b'}').unwrap();
+        buffer.put(request.slice(..brace_pos));
+        buffer.put_slice(b",\"requestedAt\":\"");
+        let date = Utc::now().format("%Y-%m-%dT%H:%M:%S.%3fZ").to_string();
+        buffer.put_slice(date.as_bytes());
+        buffer.put_slice(b"\"}");
+        return Bytes::copy_from_slice(&buffer);
     }
 }

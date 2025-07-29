@@ -53,7 +53,6 @@ async fn main() -> std::io::Result<()> {
     let controller = Controller::new(repository.clone());
     let service = Service::new(client.clone(), repository.clone());
     println!("VERSION: 6.3");
-    println!("{}", WORKERS);
 
     service.initialize_dispatcher();
     service.initialize_workers();

@@ -20,7 +20,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 use crate::{
     client::ProcessorClient, controller::Controller, models::SummaryQuery, repository::Repository,
-    service::Service, utils::WORKERS,
+    service::Service,
 };
 
 #[post("/payments")]

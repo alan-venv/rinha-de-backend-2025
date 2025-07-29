@@ -1,2 +1,1 @@
-pub const TRIGGER: u128 = 50;
-pub const WORKERS: usize = 1;
+pub const TRIGGER: u128 = 200;

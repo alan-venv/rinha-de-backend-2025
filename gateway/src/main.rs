@@ -13,14 +13,14 @@ use actix_web::{
 };
 use mimalloc::MiMalloc;
 use reqwest::Client;
-use umbral_socket::UmbralSocket;
+use umbral_socket::SocketClient;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
 use crate::{
     client::ProcessorClient, controller::Controller, models::SummaryQuery, repository::Repository,
-    service::Service, utils::WORKERS,
+    service::Service,
 };
 
 #[post("/payments")]
@@ -47,16 +47,16 @@ async fn payments_summary(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let reqwest = Client::new();
-    let umbral_socket = UmbralSocket::new("/sockets/database.sock");
+    let socket_client = SocketClient::new("/sockets/database.sock");
     let client = ProcessorClient::new(reqwest.clone());
-    let repository = Repository::new(umbral_socket.clone());
+    let repository = Repository::new(socket_client.clone());
     let controller = Controller::new(repository.clone());
     let service = Service::new(client.clone(), repository.clone());
     println!("VERSION: 6.3");
-    println!("{}", WORKERS);
 
-    service.initialize_dispatcher();
-    service.initialize_workers();
+    // service.initialize_dispatcher();
+    // service.initialize_workers();
+    service.initialize_worker();
 
     let path = env::var("SOCKET_PATH").unwrap();
     let socket = Path::new(&path);
@@ -71,7 +71,7 @@ async fn main() -> std::io::Result<()> {
             .service(payments_summary)
             .app_data(Data::new(controller.clone()))
             .app_data(Data::new(service.clone()))
-            .app_data(Data::new(umbral_socket.clone()))
+            .app_data(Data::new(socket_client.clone()))
     })
     .workers(1)
     .bind_uds(socket)?;

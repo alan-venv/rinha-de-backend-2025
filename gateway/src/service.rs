@@ -6,7 +6,6 @@ use std::time::Instant;
 use std::{sync::Arc, time::Duration};
 use tokio::time;
 
-use crate::utils::TRIGGER;
 use crate::{client::ProcessorClient, repository::Repository};
 
 #[derive(Clone)]
@@ -15,6 +14,8 @@ pub struct Service {
     repository: Repository,
     queue: Arc<SegQueue<Bytes>>,
 }
+
+pub const TRIGGER: u128 = 50;
 
 impl Service {
     pub fn new(client: ProcessorClient, repository: Repository) -> Service {

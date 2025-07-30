@@ -3,7 +3,6 @@ mod controller;
 mod models;
 mod repository;
 mod service;
-mod utils;
 
 use std::{env, os::unix::fs::PermissionsExt, path::Path};
 

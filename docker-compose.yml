@@ -8,7 +8,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "50MB"
+          memory: "80MB"
     networks:
       - backend
     ports:
@@ -35,7 +35,7 @@ services:
       resources:
         limits:
           cpus: "0.3"
-          memory: "80MB"
+          memory: "70MB"
 
   rinha-gateway-2:
     build:
@@ -54,7 +54,7 @@ services:
       resources:
         limits:
           cpus: "0.3"
-          memory: "80MB"
+          memory: "70MB"
 
   rinha-gateway-3:
     build:
@@ -73,7 +73,7 @@ services:
       resources:
         limits:
           cpus: "0.3"
-          memory: "80MB"
+          memory: "70MB"
 
   rinha-db:
     build:

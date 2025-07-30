@@ -1958,8 +1958,6 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdb05af74a1693a4145480589f00598d3de81b1dc0fc1da221cf80c337150e11"
 dependencies = [
- "bytes",
- "crossbeam-queue",
  "http-body-util",
  "hyper",
  "hyper-util",

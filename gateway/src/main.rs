@@ -47,7 +47,7 @@ async fn payments_summary(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let reqwest = Client::new();
-    let socket_client = SocketClient::new("/sockets/database.sock");
+    let umbral_socket = SocketClient::new("/sockets/database.sock");
     let client = ProcessorClient::new(reqwest.clone());
     let repository = Repository::new(socket_client.clone());
     let controller = Controller::new(repository.clone());

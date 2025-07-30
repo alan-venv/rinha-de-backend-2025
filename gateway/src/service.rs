@@ -76,6 +76,38 @@ impl Service {
         });
     }
 
+    pub fn initialize_workers(&self) {
+        for _ in 0..WORKERS {
+            let client = self.client.clone();
+            let repository = self.repository.clone();
+            let queue = self.queue.clone();
+            let receiver = self.receiver.clone();
+            let health = self.default_health.clone();
+
+            tokio::spawn(async move {
+                let mut buffer = BytesMut::with_capacity(128);
+                while let Ok(request) = receiver.recv().await {
+                    if health.load(Ordering::Relaxed) {
+                        let json = Service::enrich_json(&mut buffer, &request).await;
+                        let instant = Instant::now();
+                        let success = client.capture_default(json.clone()).await;
+                        let duration = instant.elapsed().as_millis();
+                        if success {
+                            repository.insert_default(json.clone()).await;
+                        } else {
+                            queue.push(request);
+                        }
+                        if !success || duration > TRIGGER {
+                            health.store(false, Ordering::Relaxed);
+                        }
+                    } else {
+                        queue.push(request);
+                    }
+                }
+            });
+        }
+    }
+
     async fn enrich_json(buffer: &mut BytesMut, request: &Bytes) -> Bytes {
         buffer.clear();
         let brace_pos = request.iter().rposition(|&b| b == b'}').unwrap();

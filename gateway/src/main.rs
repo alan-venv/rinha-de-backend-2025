@@ -52,10 +52,8 @@ async fn main() -> std::io::Result<()> {
     let repository = Repository::new(socket_client.clone());
     let controller = Controller::new(repository.clone());
     let service = Service::new(client.clone(), repository.clone());
-    println!("VERSION: 6.3");
+    println!("VERSION: 6.4");
 
-    // service.initialize_dispatcher();
-    // service.initialize_workers();
     service.initialize_worker();
 
     let path = env::var("SOCKET_PATH").unwrap();

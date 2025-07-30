@@ -122,7 +122,7 @@ type FallbackStorage = web::Data<FallbackQueue>;
 async fn main() -> std::io::Result<()> {
     let default: DefaultStorage = web::Data::new(DefaultQueue(Arc::new(SegQueue::new())));
     let fallback: FallbackStorage = web::Data::new(FallbackQueue(Arc::new(SegQueue::new())));
-    println!("VERSION: 6.3");
+    println!("VERSION: 6.4");
 
     let socket = Path::new("/sockets/database.sock");
     if socket.exists() {

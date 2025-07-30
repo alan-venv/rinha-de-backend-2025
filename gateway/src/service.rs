@@ -37,7 +37,6 @@ impl Service {
         tokio::spawn(async move {
             let mut interval = time::interval(Duration::from_secs(1));
             let mut buffer = BytesMut::with_capacity(128);
-            let mut requeue_times = 0;
 
             loop {
                 if let Some(request) = queue.pop() {
@@ -56,8 +55,6 @@ impl Service {
                                 if success {
                                     repository.insert_default(json.clone()).await;
                                 } else {
-                                    requeue_times += 1;
-                                    println!("{}", requeue_times);
                                     queue.push(request);
                                 }
                                 if !success || duration > TRIGGER {
@@ -66,8 +63,6 @@ impl Service {
                             }
                         }
                     } else {
-                        requeue_times += 1;
-                        println!("{}", requeue_times);
                         queue.push(request);
                     }
                 }

@@ -440,6 +440,7 @@ dependencies = [
  "crossbeam-queue",
  "mimalloc",
  "serde",
+ "umbral-socket",
 ]
 
 [[package]]

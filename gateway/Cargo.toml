@@ -12,7 +12,7 @@ chrono = { version = "0.4.41", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 reqwest = { version = "0.12.22", features = ["json"] }
 bytes = { version = "1.10.1", features = ["std"] }
-umbral-socket = "0.1.9"
+umbral-socket = "0.2.1"
 
 [profile.release]
 lto = true

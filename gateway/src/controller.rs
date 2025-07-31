@@ -1,24 +1,27 @@
-use bytes::Bytes;
+use actix_web::{
+    HttpResponse, Responder, get, post,
+    web::{Bytes, Data, Query},
+};
 
-use crate::{models::SummaryQuery, repository::Repository};
+use crate::{entity::SummaryQuery, repository::Repository, service::Service};
 
-#[derive(Clone)]
-pub struct Controller {
-    repository: Repository,
+#[post("/payments")]
+pub async fn payments(service: Data<Service>, request: Bytes) -> impl Responder {
+    service.submit(Bytes::copy_from_slice(&request));
+    return HttpResponse::Accepted().finish();
 }
 
-impl Controller {
-    pub fn new(repository: Repository) -> Controller {
-        return Controller {
-            repository: repository,
-        };
-    }
+#[post("/purge-payments")]
+pub async fn purge_payments(repository: Data<Repository>) -> impl Responder {
+    repository.purge_payments().await;
+    return HttpResponse::Ok().finish();
+}
 
-    pub async fn purge_payments(&self) {
-        self.repository.purge_payments().await;
-    }
-
-    pub async fn get_summary(&self, query: SummaryQuery) -> Bytes {
-        return self.repository.get_summary(query).await;
-    }
+#[get("/payments-summary")]
+pub async fn payments_summary(
+    repository: Data<Repository>,
+    info: Query<SummaryQuery>,
+) -> impl Responder {
+    let summary = repository.get_summary(info.into_inner()).await;
+    return HttpResponse::Ok().body(summary);
 }

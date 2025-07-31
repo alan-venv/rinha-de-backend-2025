@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use umbral_socket::stream::UmbralClient;
 
-use crate::models::SummaryQuery;
+use crate::entity::SummaryQuery;
 
 #[derive(Clone)]
 pub struct Repository {

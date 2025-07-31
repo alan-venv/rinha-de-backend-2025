@@ -6,37 +6,28 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default)]
 pub struct State {
-    pub default: Arc<SegQueue<Request>>,
-    pub fallback: Arc<SegQueue<Request>>,
+    pub default: Arc<SegQueue<PaymentRequest>>,
+    pub fallback: Arc<SegQueue<PaymentRequest>>,
 }
 
 #[derive(Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Request {
+pub struct PaymentRequest {
     pub amount: f64,
     pub requested_at: DateTime<Utc>,
 }
 
-#[derive(Serialize)]
-pub struct Response {
-    pub default: Origin,
-    pub fallback: Origin,
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SummaryResponse {
+    pub default: SummaryOrigin,
+    pub fallback: SummaryOrigin,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Origin {
+pub struct SummaryOrigin {
     pub total_requests: usize,
     pub total_amount: f64,
-}
-
-impl Origin {
-    pub fn new(requests: usize, amount: f64) -> Origin {
-        return Origin {
-            total_requests: requests,
-            total_amount: amount,
-        };
-    }
 }
 
 #[derive(Deserialize)]

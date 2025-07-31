@@ -2,10 +2,10 @@ use std::{io::Result, sync::Arc};
 
 use bytes::Bytes;
 
-use crate::entity::{Origin, Request, Response, State, SummaryQuery};
+use crate::entity::{PaymentRequest, State, SummaryOrigin, SummaryQuery, SummaryResponse};
 
 pub async fn save(state: Arc<State>, content: Bytes) -> Result<Bytes> {
-    let request: Request = serde_json::from_slice(&content)?;
+    let request: PaymentRequest = serde_json::from_slice(&content)?;
     state.default.push(request);
     Ok(Bytes::from_static(b"OK"))
 }
@@ -28,8 +28,8 @@ pub async fn summary(state: Arc<State>, content: Bytes) -> Result<Bytes> {
         fallback_items.push(req);
     }
 
-    let default_summary: Origin;
-    let fallback_summary: Origin;
+    let default_summary: SummaryOrigin;
+    let fallback_summary: SummaryOrigin;
     if let (Some(from), Some(to)) = (&query.from, &query.to) {
         let (dtr, dta) = default_items
             .iter()
@@ -41,13 +41,25 @@ pub async fn summary(state: Arc<State>, content: Bytes) -> Result<Bytes> {
             .filter(|x| x.requested_at >= *from && x.requested_at <= *to)
             .fold((0, 0.0), |(count, sum), r| (count + 1, sum + r.amount));
 
-        default_summary = Origin::new(dtr, (dta * 100.0).round() / 100.0);
-        fallback_summary = Origin::new(ftr, (fta * 100.0).round() / 100.0);
+        default_summary = SummaryOrigin {
+            total_requests: dtr,
+            total_amount: (dta * 100.0).round() / 100.0,
+        };
+        fallback_summary = SummaryOrigin {
+            total_requests: ftr,
+            total_amount: (fta * 100.0).round() / 100.0,
+        };
     } else {
         let dta: f64 = default_items.iter().map(|r| r.amount).sum();
         let fta: f64 = fallback_items.iter().map(|r| r.amount).sum();
-        default_summary = Origin::new(default_items.len(), (dta * 100.0).round() / 100.0);
-        fallback_summary = Origin::new(fallback_items.len(), (fta * 100.0).round() / 100.0);
+        default_summary = SummaryOrigin {
+            total_requests: default_items.len(),
+            total_amount: (dta * 100.0).round() / 100.0,
+        };
+        fallback_summary = SummaryOrigin {
+            total_requests: fallback_items.len(),
+            total_amount: (fta * 100.0).round() / 100.0,
+        };
     }
 
     for item in default_items {
@@ -57,7 +69,7 @@ pub async fn summary(state: Arc<State>, content: Bytes) -> Result<Bytes> {
         state.fallback.push(item);
     }
 
-    let response = Response {
+    let response = SummaryResponse {
         default: default_summary,
         fallback: fallback_summary,
     };

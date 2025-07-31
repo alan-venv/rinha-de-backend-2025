@@ -1,13 +1,11 @@
-use chrono::{DateTime, Utc};
+use bytes::Bytes;
 
-use crate::{models::SummaryResponse, repository::Repository};
+use crate::{models::SummaryQuery, repository::Repository};
 
 #[derive(Clone)]
 pub struct Controller {
     repository: Repository,
 }
-
-type Data = Option<DateTime<Utc>>;
 
 impl Controller {
     pub fn new(repository: Repository) -> Controller {
@@ -20,7 +18,7 @@ impl Controller {
         self.repository.purge_payments().await;
     }
 
-    pub async fn get_summary(&self, from: Data, to: Data) -> SummaryResponse {
-        return self.repository.get_summary(from, to).await;
+    pub async fn get_summary(&self, query: SummaryQuery) -> Bytes {
+        return self.repository.get_summary(query).await;
     }
 }

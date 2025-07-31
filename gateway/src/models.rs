@@ -14,7 +14,7 @@ pub struct SummaryOrigin {
     pub total_amount: f64,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SummaryQuery {
     pub from: Option<DateTime<Utc>>,
     pub to: Option<DateTime<Utc>>,

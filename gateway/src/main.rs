@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
     let client = ProcessorClient::new(reqwest.clone());
     let repository = Repository::new(umbral.clone());
     let service = Service::new(client.clone(), repository.clone());
-    println!("VERSION: 6.4");
+    println!("VERSION: 6.5");
 
     service.initialize_worker();
 

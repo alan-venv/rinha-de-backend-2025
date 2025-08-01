@@ -5,7 +5,7 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use tokio::time::sleep;
 use umbral_socket::SocketClient;
 
-use crate::models::{PaymentRequest, SummaryResponse};
+use crate::models::SummaryResponse;
 
 #[derive(Clone)]
 pub struct Repository {
@@ -22,15 +22,6 @@ impl Repository {
     pub async fn insert_default(&self, request: Bytes) {
         let endpoint = "/payments/default";
         let response = self.socket.post_raw_bytes(endpoint, request).await;
-        if let Err(_) = response {
-            println!("Failed to insert payment");
-        }
-    }
-
-    #[allow(dead_code)]
-    pub async fn insert_fallback(&self, request: &PaymentRequest) {
-        let endpoint = "/payments/fallback";
-        let response = self.socket.post_raw(endpoint, request).await;
         if let Err(_) = response {
             println!("Failed to insert payment");
         }

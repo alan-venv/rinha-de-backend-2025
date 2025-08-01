@@ -3,7 +3,6 @@ mod controller;
 mod models;
 mod repository;
 mod service;
-mod utils;
 
 use std::{env, os::unix::fs::PermissionsExt, path::Path};
 
@@ -47,15 +46,15 @@ async fn payments_summary(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let reqwest = Client::new();
-    let umbral_socket = SocketClient::new("/sockets/database.sock");
+    let socket_client = SocketClient::new("/sockets/database.sock");
     let client = ProcessorClient::new(reqwest.clone());
-    let repository = Repository::new(umbral_socket.clone());
+    let repository = Repository::new(socket_client.clone());
     let controller = Controller::new(repository.clone());
     let service = Service::new(client.clone(), repository.clone());
-    println!("VERSION: 6.3");
 
-    service.initialize_dispatcher();
-    service.initialize_workers();
+    println!("VERSION: 6.4");
+
+    service.initialize_worker();
 
     let path = env::var("SOCKET_PATH").unwrap();
     let socket = Path::new(&path);
@@ -70,7 +69,7 @@ async fn main() -> std::io::Result<()> {
             .service(payments_summary)
             .app_data(Data::new(controller.clone()))
             .app_data(Data::new(service.clone()))
-            .app_data(Data::new(umbral_socket.clone()))
+            .app_data(Data::new(socket_client.clone()))
     })
     .workers(1)
     .bind_uds(socket)?;

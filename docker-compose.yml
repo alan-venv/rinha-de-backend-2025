@@ -1,6 +1,7 @@
 services:
   haproxy:
     image: haproxy:3.2.3-alpine
+    container_name: rinha-haproxy
     volumes:
       - sockets:/sockets:rw
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
@@ -30,7 +31,7 @@ services:
       - backend
       - payment-processor
     depends_on:
-      - rinha-db
+      - rinha-database
     deploy:
       resources:
         limits:
@@ -49,7 +50,7 @@ services:
       - backend
       - payment-processor
     depends_on:
-      - rinha-db
+      - rinha-database
     deploy:
       resources:
         limits:
@@ -68,17 +69,17 @@ services:
       - backend
       - payment-processor
     depends_on:
-      - rinha-db
+      - rinha-database
     deploy:
       resources:
         limits:
           cpus: "0.3"
           memory: "70MB"
 
-  rinha-db:
+  rinha-database:
     build:
       context: ./database
-    container_name: rinha-db
+    container_name: rinha-database
     volumes:
       - sockets:/sockets:rw
     networks:
@@ -88,7 +89,7 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: "50MB"
+          memory: "30MB"
 
 volumes:
   sockets:

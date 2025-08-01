@@ -51,6 +51,7 @@ async fn main() -> std::io::Result<()> {
     let repository = Repository::new(socket_client.clone());
     let controller = Controller::new(repository.clone());
     let service = Service::new(client.clone(), repository.clone());
+
     println!("VERSION: 6.4");
 
     service.initialize_worker();

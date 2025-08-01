@@ -1,58 +1,34 @@
 mod client;
 mod controller;
-mod models;
+mod entity;
 mod repository;
 mod service;
 
-use std::{env, os::unix::fs::PermissionsExt, path::Path};
+use std::{env, io::Result, os::unix::fs::PermissionsExt, path::Path};
 
-use actix_web::{
-    App, HttpResponse, HttpServer, Responder, get, post,
-    web::{Bytes, Data, Query},
-};
+use actix_web::{App, HttpServer, web::Data};
 use mimalloc::MiMalloc;
 use reqwest::Client;
-use umbral_socket::SocketClient;
+use umbral_socket::stream::UmbralClient;
+
+use crate::{
+    client::ProcessorClient,
+    controller::{payments, payments_summary, purge_payments},
+    repository::Repository,
+    service::Service,
+};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-use crate::{
-    client::ProcessorClient, controller::Controller, models::SummaryQuery, repository::Repository,
-    service::Service,
-};
-
-#[post("/payments")]
-async fn payments(service: Data<Service>, request: Bytes) -> impl Responder {
-    service.submit(Bytes::copy_from_slice(&request));
-    return HttpResponse::Accepted().finish();
-}
-
-#[post("/purge-payments")]
-async fn purge_payments(controller: Data<Controller>) -> impl Responder {
-    controller.purge_payments().await;
-    return HttpResponse::Ok().finish();
-}
-
-#[get("/payments-summary")]
-async fn payments_summary(
-    controller: Data<Controller>,
-    info: Query<SummaryQuery>,
-) -> impl Responder {
-    let summary = controller.get_summary(info.from, info.to).await;
-    return HttpResponse::Ok().json(summary);
-}
-
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<()> {
     let reqwest = Client::new();
-    let socket_client = SocketClient::new("/sockets/database.sock");
+    let umbral = UmbralClient::new("/sockets/database.sock", 16);
     let client = ProcessorClient::new(reqwest.clone());
-    let repository = Repository::new(socket_client.clone());
-    let controller = Controller::new(repository.clone());
+    let repository = Repository::new(umbral.clone());
     let service = Service::new(client.clone(), repository.clone());
-
-    println!("VERSION: 6.4");
+    println!("VERSION: 6.5");
 
     service.initialize_worker();
 
@@ -67,9 +43,8 @@ async fn main() -> std::io::Result<()> {
             .service(payments)
             .service(purge_payments)
             .service(payments_summary)
-            .app_data(Data::new(controller.clone()))
+            .app_data(Data::new(repository.clone()))
             .app_data(Data::new(service.clone()))
-            .app_data(Data::new(socket_client.clone()))
     })
     .workers(1)
     .bind_uds(socket)?;

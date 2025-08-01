@@ -1,9 +1,10 @@
+use std::time::Instant;
+use std::{sync::Arc, time::Duration};
+
 use bytes::BufMut;
 use bytes::{Bytes, BytesMut};
 use chrono::Utc;
 use crossbeam_queue::SegQueue;
-use std::time::Instant;
-use std::{sync::Arc, time::Duration};
 use tokio::time;
 
 use crate::{client::ProcessorClient, repository::Repository};

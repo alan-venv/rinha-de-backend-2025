@@ -18,6 +18,8 @@ pub struct Service {
 
 pub const TRIGGER: u128 = 50;
 
+pub const TRIGGER: u128 = 50;
+
 impl Service {
     pub fn new(client: ProcessorClient, repository: Repository) -> Service {
         return Service {
@@ -31,6 +33,7 @@ impl Service {
         self.queue.push(request);
     }
 
+    pub fn initialize_worker(&self) {
     pub fn initialize_worker(&self) {
         let client = self.client.clone();
         let repository = self.repository.clone();
@@ -56,7 +59,17 @@ impl Service {
                                 let duration = instant.elapsed().as_millis();
                                 if success {
                                     repository.insert_default(json.clone()).await;
+                            while let Some(request) = queue.pop() {
+                                let json = Service::enrich_json(&mut buffer, &request).await;
+                                let instant = Instant::now();
+                                let success = client.capture_default(json.clone()).await;
+                                let duration = instant.elapsed().as_millis();
+                                if success {
+                                    repository.insert_default(json.clone()).await;
                                 } else {
+                                    queue.push(request);
+                                }
+                                if !success || duration > TRIGGER {
                                     queue.push(request);
                                 }
                                 if !success || duration > TRIGGER {

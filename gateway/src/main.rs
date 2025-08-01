@@ -31,6 +31,7 @@ async fn main() -> Result<()> {
     println!("VERSION: 6.5");
 
     service.initialize_worker();
+    service.initialize_worker();
 
     let path = env::var("SOCKET_PATH").unwrap();
     let socket = Path::new(&path);

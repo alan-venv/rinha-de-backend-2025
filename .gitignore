@@ -3,4 +3,4 @@
 /resources/tests/*.json
 *.jtl
 *.log
-partial-results.json
+*.json

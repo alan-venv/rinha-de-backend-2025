@@ -2,31 +2,33 @@ services:
   haproxy:
     image: haproxy:3.2.3-alpine
     container_name: rinha-haproxy
+    ports:
+      - 9999:80
     volumes:
       - sockets:/sockets:rw
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - backend
+    depends_on:
+      - rinha-gateway-1
+      - rinha-gateway-2
+      - rinha-gateway-3
     deploy:
       resources:
         limits:
           cpus: "0.4"
           memory: "80MB"
-    networks:
-      - backend
-    ports:
-      - 9999:80
-    depends_on:
-      - rinha-gateway-1
-      - rinha-gateway-2
-      - rinha-gateway-3
 
   rinha-gateway-1:
     build:
       context: ./gateway
     container_name: rinha-gateway-1
+    environment:
+      - SOCKET=/sockets/actix.sock.1
+      - TRIGGER=${TRIGGER}
+      - WORKERS=${WORKERS}
     volumes:
       - sockets:/sockets:rw
-    environment:
-      - SOCKET_PATH=/sockets/actix.sock.1
     networks:
       - backend
       - payment-processor
@@ -42,10 +44,12 @@ services:
     build:
       context: ./gateway
     container_name: rinha-gateway-2
+    environment:
+      - SOCKET=/sockets/actix.sock.2
+      - TRIGGER=${TRIGGER}
+      - WORKERS=${WORKERS}
     volumes:
       - sockets:/sockets:rw
-    environment:
-      - SOCKET_PATH=/sockets/actix.sock.2
     networks:
       - backend
       - payment-processor
@@ -61,10 +65,12 @@ services:
     build:
       context: ./gateway
     container_name: rinha-gateway-3
+    environment:
+      - SOCKET=/sockets/actix.sock.3
+      - TRIGGER=${TRIGGER}
+      - WORKERS=${WORKERS}
     volumes:
       - sockets:/sockets:rw
-    environment:
-      - SOCKET_PATH=/sockets/actix.sock.3
     networks:
       - backend
       - payment-processor

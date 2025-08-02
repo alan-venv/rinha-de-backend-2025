@@ -3,8 +3,9 @@ mod controller;
 mod entity;
 mod repository;
 mod service;
+mod vars;
 
-use std::{env, io::Result, os::unix::fs::PermissionsExt, path::Path};
+use std::{io::Result, os::unix::fs::PermissionsExt, path::Path};
 
 use actix_web::{App, HttpServer, web::Data};
 use mimalloc::MiMalloc;
@@ -28,11 +29,17 @@ async fn main() -> Result<()> {
     let client = ProcessorClient::new(reqwest.clone());
     let repository = Repository::new(umbral.clone());
     let service = Service::new(client.clone(), repository.clone());
-    println!("VERSION: 6.5");
+    let trigger = vars::trigger();
+    let workers = vars::workers();
 
-    service.initialize_worker();
+    println!("VERSION: 6.6");
+    println!("TRIGGER: {}", trigger);
+    println!("WORKERS: {}", workers);
 
-    let path = env::var("SOCKET_PATH").unwrap();
+    service.initialize_dispatcher();
+    service.initialize_workers();
+
+    let path = vars::socket();
     let socket = Path::new(&path);
     if socket.exists() {
         let _ = std::fs::remove_file(socket);
@@ -50,7 +57,7 @@ async fn main() -> Result<()> {
     .bind_uds(socket)?;
 
     let permissions = std::fs::Permissions::from_mode(0o766);
-    std::fs::set_permissions(path, permissions)?;
+    std::fs::set_permissions(socket, permissions)?;
 
     server.run().await
 }

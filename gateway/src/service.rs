@@ -1,8 +1,7 @@
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 use std::{sync::Arc, time::Duration};
+use tokio::sync::Notify;
 
-use async_channel::{Receiver, Sender, unbounded};
 use bytes::BufMut;
 use bytes::{Bytes, BytesMut};
 use chrono::Utc;
@@ -17,21 +16,16 @@ pub struct Service {
     client: ProcessorClient,
     repository: Repository,
     queue: Arc<SegQueue<Bytes>>,
-    health: Arc<AtomicBool>,
-    sender: Sender<Bytes>,
-    receiver: Receiver<Bytes>,
+    notify: Arc<Notify>,
 }
 
 impl Service {
     pub fn new(client: ProcessorClient, repository: Repository) -> Service {
-        let (sender, receiver) = unbounded::<Bytes>();
         return Service {
             client: client,
             repository: repository,
             queue: Arc::new(SegQueue::new()),
-            health: Arc::new(AtomicBool::new(false)),
-            sender: sender,
-            receiver: receiver,
+            notify: Arc::new(Notify::new()),
         };
     }
 
@@ -43,8 +37,7 @@ impl Service {
         let client = self.client.clone();
         let repository = self.repository.clone();
         let queue = self.queue.clone();
-        let sender = self.sender.clone();
-        let health = self.health.clone();
+        let notify = self.notify.clone();
         let trigger = vars::trigger();
 
         tokio::spawn(async move {
@@ -60,16 +53,7 @@ impl Service {
                     if success {
                         repository.insert_default(json.clone()).await;
                         if duration <= trigger {
-                            health.store(true, Ordering::Relaxed);
-                            loop {
-                                if let Some(item) = queue.pop() {
-                                    if sender.send_blocking(item).is_err() {
-                                        break;
-                                    }
-                                } else {
-                                    break;
-                                }
-                            }
+                            notify.notify_waiters();
                         }
                     } else {
                         queue.push(request);
@@ -87,14 +71,15 @@ impl Service {
             let client = self.client.clone();
             let repository = self.repository.clone();
             let queue = self.queue.clone();
-            let receiver = self.receiver.clone();
-            let health = self.health.clone();
+            let notify = self.notify.clone();
             let trigger = vars::trigger();
 
             tokio::spawn(async move {
                 let mut buffer = BytesMut::with_capacity(128);
-                while let Ok(request) = receiver.recv().await {
-                    if health.load(Ordering::Relaxed) {
+
+                loop {
+                    notify.notified().await;
+                    while let Some(request) = queue.pop() {
                         let json = Service::enrich_json(&mut buffer, &request).await;
                         let instant = Instant::now();
                         let success = client.capture_default(json.clone()).await;
@@ -105,11 +90,24 @@ impl Service {
                             queue.push(request);
                         }
                         if !success || duration > trigger {
-                            health.store(false, Ordering::Relaxed);
+                            break;
                         }
-                    } else {
-                        queue.push(request);
                     }
+                }
+            });
+        }
+    }
+
+    pub fn initialize_data_analyst(&self) {
+        let analyst = vars::analyst();
+        if analyst {
+            let queue = self.queue.clone();
+
+            tokio::spawn(async move {
+                let mut interval = time::interval(Duration::from_secs(3));
+                loop {
+                    println!("QUEUE LEN: {} - ", queue.len());
+                    interval.tick().await;
                 }
             });
         }

@@ -1,3 +1,10 @@
+pub fn version() -> f64 {
+    std::env::var("VERSION")
+        .ok()
+        .and_then(|value| value.parse::<f64>().ok())
+        .unwrap_or(0.0)
+}
+
 pub fn trigger() -> u128 {
     std::env::var("TRIGGER")
         .ok()
@@ -10,6 +17,13 @@ pub fn workers() -> usize {
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or(2)
+}
+
+pub fn analyst() -> bool {
+    std::env::var("ANALYST")
+        .ok()
+        .and_then(|value| value.parse::<bool>().ok())
+        .unwrap_or(false)
 }
 
 pub fn socket() -> String {

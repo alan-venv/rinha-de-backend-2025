@@ -29,15 +29,11 @@ async fn main() -> Result<()> {
     let client = ProcessorClient::new(reqwest.clone());
     let repository = Repository::new(umbral.clone());
     let service = Service::new(client.clone(), repository.clone());
-    let trigger = vars::trigger();
-    let workers = vars::workers();
-
-    println!("VERSION: 6.6");
-    println!("TRIGGER: {}", trigger);
-    println!("WORKERS: {}", workers);
 
     service.initialize_dispatcher();
     service.initialize_workers();
+    service.initialize_data_analyst();
+    log_vars();
 
     let path = vars::socket();
     let socket = Path::new(&path);
@@ -60,4 +56,15 @@ async fn main() -> Result<()> {
     std::fs::set_permissions(socket, permissions)?;
 
     server.run().await
+}
+
+fn log_vars() {
+    let version = vars::version();
+    let trigger = vars::trigger();
+    let workers = vars::workers();
+    let analyst = vars::analyst();
+    println!("VERSION: {}", version);
+    println!("TRIGGER: {}", trigger);
+    println!("WORKERS: {}", workers);
+    println!("ANALYST: {}", analyst);
 }

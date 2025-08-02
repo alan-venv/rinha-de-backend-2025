@@ -104,9 +104,12 @@ impl Service {
             let queue = self.queue.clone();
 
             tokio::spawn(async move {
-                let mut interval = time::interval(Duration::from_secs(3));
+                let mut interval = time::interval(Duration::from_secs(2));
                 loop {
-                    println!("QUEUE LEN: {} - ", queue.len());
+                    let length = queue.len();
+                    if length > 0 {
+                        println!("QUEUE_LEN: {}", queue.len());
+                    }
                     interval.tick().await;
                 }
             });

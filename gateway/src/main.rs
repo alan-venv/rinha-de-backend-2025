@@ -59,11 +59,10 @@ async fn main() -> Result<()> {
 }
 
 fn log_vars() {
-    let version = vars::version();
     let trigger = vars::trigger();
     let workers = vars::workers();
     let analyst = vars::analyst();
-    println!("VERSION: {}", version);
+    println!("VERSION: 6.7");
     println!("TRIGGER: {}", trigger);
     println!("WORKERS: {}", workers);
     println!("ANALYST: {}", analyst);

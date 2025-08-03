@@ -1,10 +1,3 @@
-pub fn version() -> f64 {
-    std::env::var("VERSION")
-        .ok()
-        .and_then(|value| value.parse::<f64>().ok())
-        .unwrap_or(0.0)
-}
-
 pub fn trigger() -> u128 {
     std::env::var("TRIGGER")
         .ok()

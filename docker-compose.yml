@@ -25,7 +25,6 @@ services:
     container_name: rinha-gateway-1
     environment:
       - SOCKET=/sockets/actix.sock.1
-      - VERSION=${VERSION}
       - TRIGGER=${TRIGGER}
       - WORKERS=${WORKERS}
       - ANALYST=${ANALYST}
@@ -48,7 +47,6 @@ services:
     container_name: rinha-gateway-2
     environment:
       - SOCKET=/sockets/actix.sock.2
-      - VERSION=${VERSION}
       - TRIGGER=${TRIGGER}
       - WORKERS=${WORKERS}
       - ANALYST=${ANALYST}
@@ -71,7 +69,6 @@ services:
     container_name: rinha-gateway-3
     environment:
       - SOCKET=/sockets/actix.sock.3
-      - VERSION=${VERSION}
       - TRIGGER=${TRIGGER}
       - WORKERS=${WORKERS}
       - ANALYST=${ANALYST}

@@ -33,7 +33,7 @@ impl Service {
         self.queue.push(request);
     }
 
-    pub fn initialize_dispatcher(&self) {
+    pub fn initialize_master_worker(&self) {
         let client = self.client.clone();
         let repository = self.repository.clone();
         let queue = self.queue.clone();
@@ -54,6 +54,20 @@ impl Service {
                         repository.insert_default(json.clone()).await;
                         if duration <= trigger {
                             notify.notify_waiters();
+                            while let Some(request) = queue.pop() {
+                                let json = Service::enrich_json(&mut buffer, &request).await;
+                                let instant = Instant::now();
+                                let success = client.capture_default(json.clone()).await;
+                                let duration = instant.elapsed().as_millis();
+                                if success {
+                                    repository.insert_default(json.clone()).await;
+                                } else {
+                                    queue.push(request);
+                                }
+                                if !success || duration > trigger {
+                                    break;
+                                }
+                            }
                         }
                     } else {
                         queue.push(request);
@@ -64,8 +78,8 @@ impl Service {
         });
     }
 
-    pub fn initialize_workers(&self) {
-        let workers = vars::workers();
+    pub fn initialize_slave_workers(&self) {
+        let workers = vars::slaves();
 
         for _ in 0..workers {
             let client = self.client.clone();

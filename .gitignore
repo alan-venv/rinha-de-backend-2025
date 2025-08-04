@@ -4,3 +4,5 @@
 *.jtl
 *.log
 *.json
+*.sh
+*.txt

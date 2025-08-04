@@ -5,8 +5,8 @@ pub fn trigger() -> u128 {
         .unwrap_or(200)
 }
 
-pub fn workers() -> usize {
-    std::env::var("WORKERS")
+pub fn slaves() -> usize {
+    std::env::var("SLAVES")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or(2)

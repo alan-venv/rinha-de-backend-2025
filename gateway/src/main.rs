@@ -30,8 +30,8 @@ async fn main() -> Result<()> {
     let repository = Repository::new(umbral.clone());
     let service = Service::new(client.clone(), repository.clone());
 
-    service.initialize_dispatcher();
-    service.initialize_workers();
+    service.initialize_master_worker();
+    service.initialize_slave_workers();
     service.initialize_data_analyst();
     log_vars();
 
@@ -60,10 +60,10 @@ async fn main() -> Result<()> {
 
 fn log_vars() {
     let trigger = vars::trigger();
-    let workers = vars::workers();
+    let slaves = vars::slaves();
     let analyst = vars::analyst();
-    println!("VERSION: 6.7");
+    println!("VERSION: 6.8");
     println!("TRIGGER: {}", trigger);
-    println!("WORKERS: {}", workers);
+    println!("SLAVES: {}", slaves);
     println!("ANALYST: {}", analyst);
 }

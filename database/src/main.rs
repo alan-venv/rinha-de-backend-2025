@@ -15,7 +15,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 #[tokio::main]
 async fn main() -> Result<()> {
     let state = State::default();
-    println!("VERSION: 6.5");
+    println!("VERSION: 6.5 SKYLAKE");
 
     UmbralServer::new(state)
         .route("SAVE", save)

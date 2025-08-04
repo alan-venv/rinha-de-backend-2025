@@ -62,7 +62,7 @@ fn log_vars() {
     let trigger = vars::trigger();
     let slaves = vars::slaves();
     let analyst = vars::analyst();
-    println!("VERSION: 6.8");
+    println!("VERSION: 6.8 SKYLAKE");
     println!("TRIGGER: {}", trigger);
     println!("SLAVES: {}", slaves);
     println!("ANALYST: {}", analyst);

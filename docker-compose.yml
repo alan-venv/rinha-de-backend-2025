@@ -1,12 +1,12 @@
 services:
-  haproxy:
-    image: haproxy:3.2.3-alpine
-    container_name: rinha-haproxy
+  rinha-balancer:
+    build:
+      context: ./balancer
+    container_name: rinha-balancer
     ports:
-      - 9999:80
+      - 9999:9999
     volumes:
       - sockets:/sockets:rw
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     networks:
       - backend
     depends_on:
@@ -17,7 +17,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "80MB"
+          memory: "50MB"
 
   rinha-gateway-1:
     build:

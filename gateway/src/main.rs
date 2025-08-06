@@ -5,16 +5,16 @@ mod repository;
 mod service;
 mod vars;
 
-use std::{io::Result, os::unix::fs::PermissionsExt, path::Path};
+use std::io::Result;
 
-use actix_web::{App, HttpServer, web::Data};
 use mimalloc::MiMalloc;
 use reqwest::Client;
-use umbral_socket::stream::UmbralClient;
+use umbral_socket::stream::{UmbralClient, UmbralServer};
 
 use crate::{
     client::ProcessorClient,
     controller::{payments, payments_summary, purge_payments},
+    entity::State,
     repository::Repository,
     service::Service,
 };
@@ -22,7 +22,7 @@ use crate::{
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     let reqwest = Client::new();
     let umbral = UmbralClient::new("/sockets/database.sock", 16);
@@ -35,34 +35,21 @@ async fn main() -> Result<()> {
     service.initialize_data_analyst();
     log_vars();
 
-    let path = vars::socket();
-    let socket = Path::new(&path);
-    if socket.exists() {
-        let _ = std::fs::remove_file(socket);
-    }
-
-    let server = HttpServer::new(move || {
-        App::new()
-            .service(payments)
-            .service(purge_payments)
-            .service(payments_summary)
-            .app_data(Data::new(repository.clone()))
-            .app_data(Data::new(service.clone()))
-    })
-    .workers(1)
-    .bind_uds(socket)?;
-
-    let permissions = std::fs::Permissions::from_mode(0o766);
-    std::fs::set_permissions(socket, permissions)?;
-
-    server.run().await
+    let state = State::new(repository, service);
+    let socket = vars::socket();
+    UmbralServer::new(state)
+        .route("SAVE", payments)
+        .route("PURGE", purge_payments)
+        .route("SUMMARY", payments_summary)
+        .run(&socket)
+        .await
 }
 
 fn log_vars() {
     let trigger = vars::trigger();
     let slaves = vars::slaves();
     let analyst = vars::analyst();
-    println!("VERSION: 6.8 SKYLAKE");
+    println!("VERSION: 7.0 SKYLAKE");
     println!("TRIGGER: {}", trigger);
     println!("SLAVES: {}", slaves);
     println!("ANALYST: {}", analyst);

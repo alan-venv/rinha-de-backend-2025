@@ -1,8 +1,6 @@
 use bytes::Bytes;
 use umbral_socket::stream::UmbralClient;
 
-use crate::entity::SummaryQuery;
-
 #[derive(Clone)]
 pub struct Repository {
     socket: UmbralClient,
@@ -27,11 +25,10 @@ impl Repository {
         }
     }
 
-    pub async fn get_summary(&self, query: SummaryQuery) -> Bytes {
-        let conent = Bytes::from(serde_json::to_vec(&query).unwrap());
+    pub async fn get_summary(&self, query: Bytes) -> Bytes {
         return self
             .socket
-            .send("SUMMARY", conent)
+            .send("SUMMARY", query)
             .await
             .unwrap_or(Bytes::new());
     }

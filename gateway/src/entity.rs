@@ -1,8 +1,16 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use crate::{repository::Repository, service::Service};
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct SummaryQuery {
-    pub from: Option<DateTime<Utc>>,
-    pub to: Option<DateTime<Utc>>,
+#[derive(Clone)]
+pub struct State {
+    pub repository: Repository,
+    pub service: Service,
+}
+
+impl State {
+    pub fn new(repository: Repository, service: Service) -> State {
+        return State {
+            repository,
+            service,
+        };
+    }
 }

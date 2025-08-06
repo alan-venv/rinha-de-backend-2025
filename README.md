@@ -22,5 +22,5 @@ docker compose up -d --build
 Curtiu? Dê uma olhada no [código fonte](https://github.com/alan-venv/rinha-de-backend-2025) e deixe uma ⭐!
 
 <p align="center">
-  <img src="./Galo.png" alt="Galo Foda" width="400">
+  <img src="./static/galo.png" alt="Galo Foda" width="400">
 </p>

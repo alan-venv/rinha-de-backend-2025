@@ -6,7 +6,7 @@ services:
       - 9999:80
     volumes:
       - sockets:/sockets:rw
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     networks:
       - backend
     depends_on:
@@ -23,11 +23,10 @@ services:
     build:
       context: ./gateway
     container_name: rinha-gateway-1
+    env_file:
+      - ./config/.env
     environment:
       - SOCKET=/sockets/actix.sock.1
-      - TRIGGER=${TRIGGER}
-      - SLAVES=${SLAVES}
-      - ANALYST=${ANALYST}
     volumes:
       - sockets:/sockets:rw
     networks:
@@ -45,11 +44,10 @@ services:
     build:
       context: ./gateway
     container_name: rinha-gateway-2
+    env_file:
+      - ./config/.env
     environment:
       - SOCKET=/sockets/actix.sock.2
-      - TRIGGER=${TRIGGER}
-      - SLAVES=${SLAVES}
-      - ANALYST=${ANALYST}
     volumes:
       - sockets:/sockets:rw
     networks:
@@ -67,11 +65,10 @@ services:
     build:
       context: ./gateway
     container_name: rinha-gateway-3
+    env_file:
+      - ./config/.env
     environment:
       - SOCKET=/sockets/actix.sock.3
-      - TRIGGER=${TRIGGER}
-      - SLAVES=${SLAVES}
-      - ANALYST=${ANALYST}
     volumes:
       - sockets:/sockets:rw
     networks:

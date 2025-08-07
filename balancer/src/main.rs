@@ -106,21 +106,14 @@ fn main() -> Result<()> {
     let mut database = UmbralSyncClient::new("/sockets/database.sock");
 
     std::thread::spawn(move || {
-        let mut gateway1 = UmbralSyncClient::new("/sockets/actix.sock.1");
-        let mut gateway2 = UmbralSyncClient::new("/sockets/actix.sock.2");
+        let mut worker = UmbralSyncClient::new("/sockets/actix.sock");
 
-        let mut robin = true;
         for msg in rx {
-            let response = if robin {
-                gateway1.send("SAVE", &Bytes::from(msg))
-            } else {
-                gateway2.send("SAVE", &Bytes::from(msg))
-            };
+            let response = worker.send("SAVE", &Bytes::from(msg));
 
             if let Err(_) = response {
                 println!("Deu ruim!");
             }
-            robin = !robin;
         }
     });
 

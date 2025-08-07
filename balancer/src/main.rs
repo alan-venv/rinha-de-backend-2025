@@ -5,6 +5,7 @@ use std::io::ErrorKind::WouldBlock;
 use std::io::{Read, Result, Write};
 use std::net::SocketAddr;
 
+use crossbeam_channel::{Sender, unbounded};
 use mio::net::{TcpListener, TcpStream};
 use mio::{Events, Interest, Poll, Token};
 
@@ -42,14 +43,13 @@ fn extract_path_and_query(route: &str) -> (&str, Option<&str>) {
         .unwrap_or(("/", None));
 }
 
-fn handle_client_event(stream: &mut TcpStream, buffer: &mut Vec<u8>) -> bool {
+fn handle_client_event(stream: &mut TcpStream, buffer: &mut Vec<u8>, tx: &Sender<Vec<u8>>) -> bool {
     let mut tmp = [0u8; BUFFER_SIZE];
     match stream.read(&mut tmp) {
         Ok(0) => return true,
         Ok(n) => {
             buffer.extend_from_slice(&tmp[..n]);
             if let Some(body) = parse_body(buffer) {
-                println!("{:?}", body);
                 let route = extract_route(buffer);
                 let (path, query) = extract_path_and_query(route);
 
@@ -60,7 +60,10 @@ fn handle_client_event(stream: &mut TcpStream, buffer: &mut Vec<u8>) -> bool {
                         }
                         R200C
                     }
-                    "/payments" => R202,
+                    "/payments" => {
+                        tx.send(body.to_vec()).ok();
+                        R202
+                    }
                     "/purge-payments" => R200,
                     _ => R404,
                 };
@@ -82,6 +85,14 @@ fn main() -> Result<()> {
     let mut connections: HashMap<Token, TcpStream> = HashMap::new();
     let mut buffers: HashMap<Token, Vec<u8>> = HashMap::new();
     let mut unique_token = Token(SERVER.0 + 1);
+    let (tx, rx) = unbounded::<Vec<u8>>();
+
+    std::thread::spawn(move || {
+        for msg in rx {
+            // TODO: enviar `msg` para API real
+            println!("Enviando para API: {}", String::from_utf8_lossy(&msg));
+        }
+    });
 
     poll.registry().register(&mut listener, SERVER, READABLE)?;
 
@@ -107,7 +118,7 @@ fn main() -> Result<()> {
                     let mut remove = false;
                     if let Some(stream) = connections.get_mut(&token) {
                         if let Some(buffer) = buffers.get_mut(&token) {
-                            remove = handle_client_event(stream, buffer);
+                            remove = handle_client_event(stream, buffer, &tx);
                         }
                     }
                     if remove {

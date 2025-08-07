@@ -1,13 +1,13 @@
 use bytes::Bytes;
-use umbral_socket::stream::UmbralClient;
+use umbral_socket::stream::UmbralAsyncClient;
 
 #[derive(Clone)]
 pub struct Repository {
-    socket: UmbralClient,
+    socket: UmbralAsyncClient,
 }
 
 impl Repository {
-    pub fn new(socket: UmbralClient) -> Repository {
+    pub fn new(socket: UmbralAsyncClient) -> Repository {
         return Repository { socket };
     }
 

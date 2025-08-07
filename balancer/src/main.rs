@@ -5,9 +5,13 @@ use std::io::ErrorKind::WouldBlock;
 use std::io::{Read, Result, Write};
 use std::net::SocketAddr;
 
+use bytes::Bytes;
 use crossbeam_channel::{Sender, unbounded};
 use mio::net::{TcpListener, TcpStream};
 use mio::{Events, Interest, Poll, Token};
+use umbral_socket::stream::UmbralSyncClient;
+
+use crate::robin::RoundRobin;
 
 const SERVER: Token = Token(0);
 const READABLE: Interest = Interest::READABLE;
@@ -88,9 +92,21 @@ fn main() -> Result<()> {
     let (tx, rx) = unbounded::<Vec<u8>>();
 
     std::thread::spawn(move || {
+        let mut gateway1 = UmbralSyncClient::new("/sockets/actix.sock.1");
+        let mut gateway2 = UmbralSyncClient::new("/sockets/actix.sock.2");
+
+        let mut robin = true;
         for msg in rx {
-            // TODO: enviar `msg` para API real
-            println!("Enviando para API: {}", String::from_utf8_lossy(&msg));
+            let response = if robin {
+                gateway1.send("SAVE", &Bytes::from(msg))
+            } else {
+                gateway2.send("SAVE", &Bytes::from(msg))
+            };
+
+            if let Err(_) = response {
+                println!("Deu ruim!");
+            }
+            robin = !robin;
         }
     });
 

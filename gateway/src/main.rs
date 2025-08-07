@@ -9,7 +9,7 @@ use std::io::Result;
 
 use mimalloc::MiMalloc;
 use reqwest::Client;
-use umbral_socket::stream::{UmbralClient, UmbralServer};
+use umbral_socket::stream::{UmbralAsyncClient, UmbralServer};
 
 use crate::{
     client::ProcessorClient,
@@ -25,7 +25,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 #[tokio::main]
 async fn main() -> Result<()> {
     let reqwest = Client::new();
-    let umbral = UmbralClient::new("/sockets/database.sock", 16);
+    let umbral = UmbralAsyncClient::new("/sockets/database.sock", 16);
     let client = ProcessorClient::new(reqwest.clone());
     let repository = Repository::new(umbral.clone());
     let service = Service::new(client.clone(), repository.clone());

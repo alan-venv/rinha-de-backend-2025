@@ -12,7 +12,6 @@ services:
     depends_on:
       - rinha-gateway-1
       - rinha-gateway-2
-      - rinha-gateway-3
     deploy:
       resources:
         limits:
@@ -38,7 +37,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.3"
+          cpus: "0.4"
           memory: "70MB"
 
   rinha-gateway-2:
@@ -60,29 +59,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: "70MB"
-
-  rinha-gateway-3:
-    build:
-      context: ./gateway
-    container_name: rinha-gateway-3
-    environment:
-      - SOCKET=/sockets/actix.sock.3
-      - TRIGGER=${TRIGGER}
-      - SLAVES=${SLAVES}
-      - ANALYST=${ANALYST}
-    volumes:
-      - sockets:/sockets:rw
-    networks:
-      - backend
-      - payment-processor
-    depends_on:
-      - rinha-database
-    deploy:
-      resources:
-        limits:
-          cpus: "0.3"
+          cpus: "0.4"
           memory: "70MB"
 
   rinha-database:

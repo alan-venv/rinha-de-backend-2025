@@ -5,19 +5,16 @@ use std::io::ErrorKind::WouldBlock;
 use std::io::{Read, Result, Write};
 use std::net::SocketAddr;
 
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 use crossbeam_channel::{Sender, unbounded};
 use mio::net::{TcpListener, TcpStream};
 use mio::{Events, Interest, Poll, Token};
 use umbral_socket::stream::UmbralSyncClient;
 
-use crate::robin::RoundRobin;
-
 const SERVER: Token = Token(0);
 const READABLE: Interest = Interest::READABLE;
 const BUFFER_SIZE: usize = 1024;
 const R200: &[u8] = b"HTTP/1.1 200 OK\r\n\r\n";
-const R200C: &[u8] = b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"default\":{\"totalRequests\":0,\"totalAmount\":-0.0},\"fallback\":{\"totalRequests\":0,\"totalAmount\":-0.0}}";
 const R202: &[u8] = b"HTTP/1.1 202 Accepted\r\n\r\n";
 const R404: &[u8] = b"HTTP/1.1 404 Not Found\r\n\r\n";
 
@@ -47,7 +44,12 @@ fn extract_path_and_query(route: &str) -> (&str, Option<&str>) {
         .unwrap_or(("/", None));
 }
 
-fn handle_client_event(stream: &mut TcpStream, buffer: &mut Vec<u8>, tx: &Sender<Vec<u8>>) -> bool {
+fn handle_client_event(
+    stream: &mut TcpStream,
+    buffer: &mut Vec<u8>,
+    tx: &Sender<Vec<u8>>,
+    client: &mut UmbralSyncClient,
+) -> bool {
     let mut tmp = [0u8; BUFFER_SIZE];
     match stream.read(&mut tmp) {
         Ok(0) => return true,
@@ -57,21 +59,31 @@ fn handle_client_event(stream: &mut TcpStream, buffer: &mut Vec<u8>, tx: &Sender
                 let route = extract_route(buffer);
                 let (path, query) = extract_path_and_query(route);
 
-                let response: &[u8] = match path {
+                let response: Bytes = match path {
                     "/payments-summary" => {
-                        if let Some(data) = query {
-                            println!("{:?}", data);
-                        }
-                        R200C
+                        let response = if let Some(data) = query {
+                            let content = Bytes::copy_from_slice(data.as_bytes());
+                            client.send("SUMMARY", &content).unwrap()
+                        } else {
+                            client.send("SUMMARY", &Bytes::new()).unwrap()
+                        };
+                        let r2 = Bytes::copy_from_slice(R200);
+                        let mut combined = BytesMut::with_capacity(r2.len() + response.len());
+                        combined.extend_from_slice(&r2);
+                        combined.extend_from_slice(&response);
+                        combined.freeze()
                     }
                     "/payments" => {
                         tx.send(body.to_vec()).ok();
-                        R202
+                        Bytes::from_static(R202)
                     }
-                    "/purge-payments" => R200,
-                    _ => R404,
+                    "/purge-payments" => {
+                        client.send("PURGE", &Bytes::new()).unwrap();
+                        Bytes::from_static(R200)
+                    }
+                    _ => Bytes::from_static(R404),
                 };
-                let _ = stream.write_all(response);
+                let _ = stream.write_all(response.as_ref());
                 return true;
             }
         }
@@ -82,6 +94,7 @@ fn handle_client_event(stream: &mut TcpStream, buffer: &mut Vec<u8>, tx: &Sender
 }
 
 fn main() -> Result<()> {
+    println!("VERSION: 1.0 SKYLAKE");
     let addr: SocketAddr = "0.0.0.0:9999".parse().unwrap();
     let mut listener = TcpListener::bind(addr)?;
     let mut poll = Poll::new()?;
@@ -90,6 +103,7 @@ fn main() -> Result<()> {
     let mut buffers: HashMap<Token, Vec<u8>> = HashMap::new();
     let mut unique_token = Token(SERVER.0 + 1);
     let (tx, rx) = unbounded::<Vec<u8>>();
+    let mut database = UmbralSyncClient::new("/sockets/database.sock");
 
     std::thread::spawn(move || {
         let mut gateway1 = UmbralSyncClient::new("/sockets/actix.sock.1");
@@ -134,7 +148,7 @@ fn main() -> Result<()> {
                     let mut remove = false;
                     if let Some(stream) = connections.get_mut(&token) {
                         if let Some(buffer) = buffers.get_mut(&token) {
-                            remove = handle_client_event(stream, buffer, &tx);
+                            remove = handle_client_event(stream, buffer, &tx, &mut database);
                         }
                     }
                     if remove {

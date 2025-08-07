@@ -1,8 +1,9 @@
 use std::{io::Result, sync::Arc};
 
 use bytes::Bytes;
+use chrono::{DateTime, Utc};
 
-use crate::entity::{PaymentRequest, State, SummaryOrigin, SummaryQuery, SummaryResponse};
+use crate::entity::{PaymentRequest, State, SummaryOrigin, SummaryResponse};
 
 pub async fn save(state: Arc<State>, content: Bytes) -> Result<Bytes> {
     let request: PaymentRequest = serde_json::from_slice(&content)?;
@@ -17,7 +18,7 @@ pub async fn purge(state: Arc<State>, _: Bytes) -> Result<Bytes> {
 }
 
 pub async fn summary(state: Arc<State>, content: Bytes) -> Result<Bytes> {
-    let query: SummaryQuery = serde_json::from_slice(&content)?;
+    let (from, to) = parse_params(&content);
 
     let mut default_items = Vec::new();
     while let Some(req) = state.default.pop() {
@@ -30,15 +31,15 @@ pub async fn summary(state: Arc<State>, content: Bytes) -> Result<Bytes> {
 
     let default_summary: SummaryOrigin;
     let fallback_summary: SummaryOrigin;
-    if let (Some(from), Some(to)) = (&query.from, &query.to) {
+    if let (Some(from), Some(to)) = (from, to) {
         let (dtr, dta) = default_items
             .iter()
-            .filter(|x| x.requested_at >= *from && x.requested_at <= *to)
+            .filter(|x| x.requested_at >= from && x.requested_at <= to)
             .fold((0, 0.0), |(count, sum), r| (count + 1, sum + r.amount));
 
         let (ftr, fta) = fallback_items
             .iter()
-            .filter(|x| x.requested_at >= *from && x.requested_at <= *to)
+            .filter(|x| x.requested_at >= from && x.requested_at <= to)
             .fold((0, 0.0), |(count, sum), r| (count + 1, sum + r.amount));
 
         default_summary = SummaryOrigin {
@@ -74,4 +75,34 @@ pub async fn summary(state: Arc<State>, content: Bytes) -> Result<Bytes> {
         fallback: fallback_summary,
     };
     Ok(Bytes::from(serde_json::to_vec(&response).unwrap()))
+}
+
+fn parse_params(input: &[u8]) -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
+    let s = match str::from_utf8(input) {
+        Ok(v) => v,
+        Err(_) => return (None, None),
+    };
+
+    let mut from = None;
+    let mut to = None;
+
+    for kv in s.split('&') {
+        if kv.len() < 4 {
+            continue;
+        }
+
+        unsafe {
+            if kv.get_unchecked(0..5) == "from=" {
+                from = DateTime::parse_from_rfc3339(kv.get_unchecked(5..))
+                    .ok()
+                    .map(|dt| dt.with_timezone(&Utc));
+            } else if kv.get_unchecked(0..3) == "to=" {
+                to = DateTime::parse_from_rfc3339(kv.get_unchecked(3..))
+                    .ok()
+                    .map(|dt| dt.with_timezone(&Utc));
+            }
+        }
+    }
+
+    (from, to)
 }

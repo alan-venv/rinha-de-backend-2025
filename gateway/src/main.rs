@@ -10,7 +10,7 @@ use std::{io::Result, os::unix::fs::PermissionsExt, path::Path};
 use actix_web::{App, HttpServer, web::Data};
 use mimalloc::MiMalloc;
 use reqwest::Client;
-use umbral_socket::stream::UmbralClient;
+use umbral_socket::stream::UmbralAsyncClient;
 
 use crate::{
     client::ProcessorClient,
@@ -25,7 +25,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 #[actix_web::main]
 async fn main() -> Result<()> {
     let reqwest = Client::new();
-    let umbral = UmbralClient::new("/sockets/database.sock", 16);
+    let umbral = UmbralAsyncClient::new("/sockets/database.sock", 16);
     let client = ProcessorClient::new(reqwest.clone());
     let repository = Repository::new(umbral.clone());
     let service = Service::new(client.clone(), repository.clone());
@@ -62,7 +62,7 @@ fn log_vars() {
     let trigger = vars::trigger();
     let slaves = vars::slaves();
     let analyst = vars::analyst();
-    println!("VERSION: 6.8 SKYLAKE");
+    println!("VERSION: 7.0 SKYLAKE");
     println!("TRIGGER: {}", trigger);
     println!("SLAVES: {}", slaves);
     println!("ANALYST: {}", analyst);

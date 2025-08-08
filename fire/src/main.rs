@@ -12,20 +12,18 @@ const BUF_CAP: usize = 2 * 1024; // 64
 const HEADER_LIMIT: usize = 1 * 1024; // 16
 
 #[inline]
-fn first_line_end(buf: &[u8]) -> Option<usize> {
-    memmem::find(buf, b"\r\n")
-}
-#[inline]
 fn headers_end(buf: &[u8]) -> Option<usize> {
     memmem::find(buf, b"\r\n\r\n").map(|i| i + 4)
 }
 #[inline]
-fn parse_path_bytes(buf: &[u8]) -> Option<&[u8]> {
-    let end = first_line_end(buf)?;
-    let line = &buf[..end];
-    let mut it = line.split(|&b| b == b' ');
-    it.next()?; // method
-    it.next() // path
+fn parse_path(buf: &[u8]) -> Option<&[u8]> {
+    let line_end = memmem::find(buf, b"\r\n")?;
+    let line = &buf[..line_end];
+    let sp1 = memmem::find(line, b" ")?;
+    let rest = &line[sp1 + 1..];
+    let sp2_rel = memmem::find(rest, b" ")?;
+    let sp2 = sp1 + 1 + sp2_rel;
+    Some(&line[sp1 + 1..sp2])
 }
 
 fn main() {
@@ -43,7 +41,6 @@ fn main() {
             Err(_) => continue,
         };
 
-        // Leitura em loop até encontrar fim dos headers ou atingir limite
         let mut n = 0usize;
         let hend = loop {
             if n >= HEADER_LIMIT {
@@ -70,16 +67,13 @@ fn main() {
         };
 
         let req = &buf[..n];
-        let Some(path_bytes) = parse_path_bytes(req) else {
+        let Some(path) = parse_path(req) else {
             let _ = stream.write_all(R400);
             continue;
         };
         let _body = &req[hend..];
 
-        // Fast-path: checa comprimento antes do memcmp
-        if (path_bytes.len() == 9 && path_bytes == b"/payments")
-            || (path_bytes.len() == 7 && path_bytes == b"/health")
-        {
+        if (path.len() == 9 && path == b"/payments") || (path.len() == 7 && path == b"/health") {
             let _ = stream.write_all(R204);
         } else {
             let _ = stream.write_all(R404);

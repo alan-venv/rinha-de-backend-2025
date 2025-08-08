@@ -1,5 +1,6 @@
 use std::time::Instant;
 use std::{sync::Arc, time::Duration};
+use tokio::net::UnixStream;
 use tokio::sync::Notify;
 
 use bytes::BufMut;
@@ -18,6 +19,8 @@ pub struct Service {
     queue: Arc<SegQueue<Bytes>>,
     notify: Arc<Notify>,
 }
+
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 impl Service {
     pub fn new(client: ProcessorClient, repository: Repository) -> Service {
@@ -128,6 +131,56 @@ impl Service {
                 }
             });
         }
+    }
+
+    pub fn initialize_poller(&self) {
+        let queue = self.queue.clone();
+        tokio::spawn(async move {
+            const QUERY_SOCK: &str = "/sockets/pull.sock";
+            const OP_PULL: u8 = 0x02;
+            const OP_RESP: u8 = 0x03;
+
+            let mut interval = time::interval(Duration::from_secs(5));
+            loop {
+                println!("{}", queue.len());
+
+                if let Some(value) = queue.pop() {
+                    println!("{:?}", value);
+                }
+
+                interval.tick().await;
+
+                let mut sock = match UnixStream::connect(QUERY_SOCK).await {
+                    Ok(s) => s,
+                    Err(_) => continue,
+                };
+
+                if sock.write_all(&[OP_PULL]).await.is_err() {
+                    continue;
+                }
+
+                let mut hdr = [0u8; 5];
+                if sock.read_exact(&mut hdr).await.is_err() || hdr[0] != OP_RESP {
+                    continue;
+                }
+                let count = u32::from_be_bytes([hdr[1], hdr[2], hdr[3], hdr[4]]) as usize;
+
+                for _ in 0..count {
+                    let mut lenbuf = [0u8; 4];
+                    if sock.read_exact(&mut lenbuf).await.is_err() {
+                        break;
+                    }
+                    let len = u32::from_be_bytes(lenbuf) as usize;
+
+                    let mut buf = BytesMut::with_capacity(len);
+                    buf.resize(len, 0);
+                    if sock.read_exact(&mut buf).await.is_err() {
+                        break;
+                    }
+                    queue.push(buf.freeze());
+                }
+            }
+        });
     }
 
     async fn enrich_json(buffer: &mut BytesMut, request: &Bytes) -> Bytes {

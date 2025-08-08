@@ -10,8 +10,8 @@ services:
     networks:
       - backend
     depends_on:
-      - rinha-fire-1
-      - rinha-fire-2
+      - rinha-gateway-1
+      - rinha-gateway-2
     deploy:
       resources:
         limits:
@@ -37,12 +37,12 @@ services:
   #         cpus: "0.3"
   #         memory: "80MB"
 
-  rinha-fire-1:
+  rinha-gateway-1:
     build:
-      context: ./fire
-    container_name: rinha-fire-1
+      context: ./gateway
+    container_name: rinha-gateway-1
     environment:
-      - SOCKET=/sockets/fire1.sock
+      - SOCKET=/sockets/gateway-1.sock
     volumes:
       - sockets:/sockets:rw
     networks:
@@ -56,12 +56,12 @@ services:
           cpus: "0.4"
           memory: "70MB"
 
-  rinha-fire-2:
+  rinha-gateway-2:
     build:
-      context: ./fire
-    container_name: rinha-fire-2
+      context: ./gateway
+    container_name: rinha-gateway-2
     environment:
-      - SOCKET=/sockets/fire2.sock
+      - SOCKET=/sockets/gateway-2.sock
     volumes:
       - sockets:/sockets:rw
     networks:
@@ -89,6 +89,40 @@ services:
         limits:
           cpus: "0.4"
           memory: "70MB"
+
+  rinha-worker:
+    build:
+      context: ./worker
+    container_name: rinha-worker
+    environment:
+      - SOCKET=/sockets/worker.sock
+    volumes:
+      - sockets:/sockets:rw
+    networks:
+      - backend
+      - payment-processor
+    depends_on:
+      - rinha-queue
+    deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: "70MB"
+
+  rinha-database:
+    build:
+      context: ./database
+    container_name: rinha-database
+    volumes:
+      - sockets:/sockets:rw
+    networks:
+      - backend
+      - payment-processor
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "30MB"
 
 volumes:
   sockets:

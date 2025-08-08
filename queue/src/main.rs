@@ -243,7 +243,6 @@ fn handle_push(c: &mut Conn, queue: &mut Queue) {
         let sz = 4 + data.len();
 
         if queue.can_push(sz) {
-            println!("{:?}", data);
             queue.push(Item { data, sz });
         } else {
             // drop sob pressão

@@ -1,9 +1,0 @@
-[package]
-name = "fire"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-crossbeam = "0.8.4"
-memchr = "2.7.5"
-nix = "0.30.1"

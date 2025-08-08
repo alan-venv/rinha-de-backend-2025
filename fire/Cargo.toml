@@ -6,3 +6,10 @@ edition = "2024"
 [dependencies]
 crossbeam = "0.8.4"
 memchr = "2.7.5"
+
+[profile.release]
+lto = true
+panic = "abort"
+strip = "debuginfo"
+codegen-units = 1
+opt-level = 3

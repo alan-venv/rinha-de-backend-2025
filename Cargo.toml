@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["database", "gateway"]
+members = ["database", "fire", "gateway", "queue"]
 
 [profile.release]
 lto = true

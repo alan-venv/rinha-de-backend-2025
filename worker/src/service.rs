@@ -136,14 +136,8 @@ impl Service {
             const OP_PULL: u8 = 0x02;
             const OP_RESP: u8 = 0x03;
 
-            let mut interval = time::interval(Duration::from_secs(5));
+            let mut interval = time::interval(Duration::from_secs(2));
             loop {
-                println!("{}", queue.len());
-
-                if let Some(value) = queue.pop() {
-                    println!("{:?}", value);
-                }
-
                 interval.tick().await;
 
                 let mut sock = match UnixStream::connect(QUERY_SOCK).await {

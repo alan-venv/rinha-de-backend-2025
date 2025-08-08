@@ -1,12 +1,12 @@
 services:
-  haproxy:
-    image: haproxy:3.2.3-alpine
-    container_name: rinha-haproxy
-    ports:
-      - 9999:80
+  nginx:
+    image: nginx:1.29.0-alpine
+    container_name: rinha-nginx
     volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
       - sockets:/sockets:rw
-      - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "9999:80"
     networks:
       - backend
     depends_on:
@@ -16,7 +16,7 @@ services:
       resources:
         limits:
           cpus: "0.3"
-          memory: "80MB"
+          memory: "50MB"
 
   rinha-gateway-1:
     build:
@@ -25,7 +25,7 @@ services:
     env_file:
       - ./config/.env
     environment:
-      - SOCKET=/sockets/actix.sock.1
+      - SOCKET=/sockets/gateway-1.sock
     volumes:
       - sockets:/sockets:rw
     networks:
@@ -46,7 +46,28 @@ services:
     env_file:
       - ./config/.env
     environment:
-      - SOCKET=/sockets/actix.sock.2
+      - SOCKET=/sockets/gateway-2.sock
+    volumes:
+      - sockets:/sockets:rw
+    networks:
+      - backend
+      - payment-processor
+    depends_on:
+      - rinha-database
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "70MB"
+
+  rinha-gateway-3:
+    build:
+      context: ./gateway
+    container_name: rinha-gateway-3
+    env_file:
+      - ./config/.env
+    environment:
+      - SOCKET=/sockets/gateway-3.sock
     volumes:
       - sockets:/sockets:rw
     networks:
@@ -77,6 +98,11 @@ services:
 
 volumes:
   sockets:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=16m,mode=1777
 
 networks:
   backend:

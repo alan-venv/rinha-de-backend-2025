@@ -1,5 +1,7 @@
 use std::io::{Read, Write};
-use std::os::unix::net::{UnixListener, UnixStream};
+use std::os::unix::fs::PermissionsExt;
+use std::os::unix::net::UnixListener;
+use std::path::Path; // UnixStream
 
 const R_OK: &[u8] = b"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 2\r\n\r\nOK";
 const R_404: &[u8] = b"HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
@@ -23,12 +25,13 @@ fn parse_body(buf: &[u8]) -> Option<&[u8]> {
 }
 
 fn main() {
-    let listen_path = "/tmp/in.sock";
-    let forward_path = "/tmp/out.sock";
+    let path = &std::env::var("SOCKET").expect("socket path not set");
+    let _ = std::fs::remove_file(path);
+    let listener = UnixListener::bind(path).unwrap();
+    let permissions = std::fs::Permissions::from_mode(0o766);
+    std::fs::set_permissions(path, permissions).unwrap();
 
-    let _ = std::fs::remove_file(listen_path);
-    let listener = UnixListener::bind(listen_path).unwrap();
-    let mut forward = UnixStream::connect(forward_path).unwrap();
+    //let mut forward = UnixStream::connect(forward_path).unwrap();
 
     let mut buf = [0u8; 64 * 1024];
 
@@ -58,9 +61,10 @@ fn main() {
 
         match path {
             "/payments" => {
-                let _ = forward.write_all(&(body.len() as u32).to_be_bytes());
-                let _ = forward.write_all(body);
-                let _ = forward.write_all(b"\n");
+                //println!("{}", String::from_utf8_lossy(body));
+                // let _ = forward.write_all(&(body.len() as u32).to_be_bytes());
+                // let _ = forward.write_all(body);
+                // let _ = forward.write_all(b"\n");
                 let _ = stream.write_all(R_OK);
             }
             "/health" => {

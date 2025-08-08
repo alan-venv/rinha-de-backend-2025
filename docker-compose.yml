@@ -1,79 +1,56 @@
 services:
-  rinha-balancer:
-    build:
-      context: ./balancer
-    container_name: rinha-balancer
+  haproxy:
+    image: haproxy:3.2.3-alpine
+    container_name: rinha-haproxy
     ports:
-      - 9999:9999
+      - 9999:80
     volumes:
       - sockets:/sockets:rw
+      - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     networks:
       - backend
     depends_on:
-      - rinha-gateway-1
-      - rinha-gateway-2
+      - rinha-fire-1
+      - rinha-fire-2
     deploy:
       resources:
         limits:
-          cpus: "0.4"
-          memory: "50MB"
+          cpus: "0.3"
+          memory: "80MB"
 
-  rinha-gateway-1:
+  rinha-fire-1:
     build:
-      context: ./gateway
-    container_name: rinha-gateway-1
-    env_file:
-      - ./config/.env
+      context: ./fire
+    container_name: rinha-fire-1
     environment:
-      - SOCKET=/sockets/actix.sock.1
+      - SOCKET=/sockets/fire1.sock
     volumes:
       - sockets:/sockets:rw
     networks:
       - backend
       - payment-processor
-    depends_on:
-      - rinha-database
     deploy:
       resources:
         limits:
           cpus: "0.4"
           memory: "70MB"
 
-  rinha-gateway-2:
+  rinha-fire-2:
     build:
-      context: ./gateway
-    container_name: rinha-gateway-2
-    env_file:
-      - ./config/.env
+      context: ./fire
+    container_name: rinha-fire-2
     environment:
-      - SOCKET=/sockets/actix.sock.2
+      - SOCKET=/sockets/fire2.sock
     volumes:
       - sockets:/sockets:rw
     networks:
       - backend
       - payment-processor
-    depends_on:
-      - rinha-database
     deploy:
       resources:
         limits:
           cpus: "0.4"
           memory: "70MB"
-
-  rinha-database:
-    build:
-      context: ./database
-    container_name: rinha-database
-    volumes:
-      - sockets:/sockets:rw
-    networks:
-      - backend
-      - payment-processor
-    deploy:
-      resources:
-        limits:
-          cpus: "0.2"
-          memory: "30MB"
 
 volumes:
   sockets:

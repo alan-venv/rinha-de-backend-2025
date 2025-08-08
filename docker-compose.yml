@@ -15,7 +15,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.3"
+          cpus: "0.4"
           memory: "50MB"
 
   rinha-gateway-1:
@@ -36,8 +36,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: "70MB"
+          cpus: "0.3"
+          memory: "50MB"
 
   rinha-gateway-2:
     build:
@@ -57,8 +57,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: "70MB"
+          cpus: "0.3"
+          memory: "50MB"
 
   rinha-gateway-3:
     build:
@@ -78,8 +78,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: "70MB"
+          cpus: "0.3"
+          memory: "50MB"
 
   rinha-database:
     build:

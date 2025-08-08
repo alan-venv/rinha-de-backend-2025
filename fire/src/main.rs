@@ -1,27 +1,26 @@
 use std::io::{Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::UnixListener;
-use std::path::Path; // UnixStream
 
-const R_OK: &[u8] = b"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 2\r\n\r\nOK";
-const R_404: &[u8] = b"HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
-const R_400: &[u8] = b"HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+const R200: &[u8] = b"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 2\r\n\r\nOK";
+const R404: &[u8] = b"HTTP/1.1 404 Not Found\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+const R400: &[u8] = b"HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
 
-fn parse_path(buf: &[u8]) -> Option<&str> {
-    let line_end = buf.windows(2).position(|w| w == b"\r\n")?;
-    let line = &buf[..line_end];
+#[inline]
+fn first_line_end(buf: &[u8]) -> Option<usize> {
+    buf.windows(2).position(|w| w == b"\r\n")
+}
+#[inline]
+fn headers_end(buf: &[u8]) -> Option<usize> {
+    buf.windows(4).position(|w| w == b"\r\n\r\n").map(|i| i + 4)
+}
+#[inline]
+fn parse_path_bytes(buf: &[u8]) -> Option<&[u8]> {
+    let end = first_line_end(buf)?;
+    let line = &buf[..end];
     let mut it = line.split(|&b| b == b' ');
     it.next()?;
-    let path = it.next()?;
-    std::str::from_utf8(path).ok()
-}
-
-fn parse_body(buf: &[u8]) -> Option<&[u8]> {
-    if let Some(i) = buf.windows(4).position(|w| w == b"\r\n\r\n") {
-        Some(&buf[i + 4..])
-    } else {
-        None
-    }
+    it.next()
 }
 
 fn main() {
@@ -30,8 +29,6 @@ fn main() {
     let listener = UnixListener::bind(path).unwrap();
     let permissions = std::fs::Permissions::from_mode(0o766);
     std::fs::set_permissions(path, permissions).unwrap();
-
-    //let mut forward = UnixStream::connect(forward_path).unwrap();
 
     let mut buf = [0u8; 64 * 1024];
 
@@ -44,35 +41,29 @@ fn main() {
         let n = match stream.read(&mut buf) {
             Ok(n) if n > 0 => n,
             _ => {
-                let _ = stream.write_all(R_400);
+                let _ = stream.write_all(R400);
                 continue;
             }
         };
         let req = &buf[..n];
 
-        let Some(path) = parse_path(req) else {
-            let _ = stream.write_all(R_400);
+        let Some(path) = parse_path_bytes(req) else {
+            let _ = stream.write_all(R400);
             continue;
         };
-        let Some(body) = parse_body(req) else {
-            let _ = stream.write_all(R_400);
+        let Some(hend) = headers_end(req) else {
+            let _ = stream.write_all(R400);
             continue;
         };
+        let _body = &req[hend..];
 
-        match path {
-            "/payments" => {
-                //println!("{}", String::from_utf8_lossy(body));
-                // let _ = forward.write_all(&(body.len() as u32).to_be_bytes());
-                // let _ = forward.write_all(body);
-                // let _ = forward.write_all(b"\n");
-                let _ = stream.write_all(R_OK);
-            }
-            "/health" => {
-                let _ = stream.write_all(R_OK);
-            }
-            _ => {
-                let _ = stream.write_all(R_404);
-            }
+        // Fast-path de roteamento por comparação direta de bytes
+        if path == b"/payments" {
+            let _ = stream.write_all(R200);
+        } else if path == b"/health" {
+            let _ = stream.write_all(R200);
+        } else {
+            let _ = stream.write_all(R404);
         }
     }
 }

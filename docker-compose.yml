@@ -1,12 +1,12 @@
 services:
-  haproxy:
-    image: haproxy:3.2.3-alpine
-    container_name: rinha-haproxy
-    ports:
-      - 9999:80
+  nginx:
+    image: nginx:1.29.0-alpine
+    container_name: rinha-nginx
     volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
       - sockets:/sockets:rw
-      - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "9999:80"
     networks:
       - backend
     depends_on:
@@ -16,7 +16,26 @@ services:
       resources:
         limits:
           cpus: "0.3"
-          memory: "80MB"
+          memory: "50MB"
+
+  # haproxy:
+  #   image: haproxy:3.2.3-alpine
+  #   container_name: rinha-haproxy
+  #   ports:
+  #     - 9999:80
+  #   volumes:
+  #     - sockets:/sockets:rw
+  #     - ./config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+  #   networks:
+  #     - backend
+  #   depends_on:
+  #     - rinha-fire-1
+  #     - rinha-fire-2
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: "0.3"
+  #         memory: "80MB"
 
   rinha-fire-1:
     build:

@@ -35,7 +35,7 @@ async fn main() -> Result<()> {
     service.initialize_poller();
     log_vars();
 
-    let state = State::new(repository, service);
+    let state = State::new(repository);
     let socket = vars::socket();
     UmbralServer::new(state)
         .route("PURGE", purge_payments)

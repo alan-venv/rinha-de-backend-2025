@@ -1,20 +1,16 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{repository::Repository, service::Service};
+use crate::repository::Repository;
 
 #[derive(Clone)]
 pub struct State {
     pub repository: Repository,
-    pub service: Service,
 }
 
 impl State {
-    pub fn new(repository: Repository, service: Service) -> State {
-        return State {
-            repository,
-            service,
-        };
+    pub fn new(repository: Repository) -> State {
+        return State { repository };
     }
 }
 

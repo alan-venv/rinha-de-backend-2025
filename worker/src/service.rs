@@ -32,10 +32,6 @@ impl Service {
         };
     }
 
-    pub fn submit(&self, request: Bytes) {
-        self.queue.push(request);
-    }
-
     pub fn initialize_master_worker(&self) {
         let client = self.client.clone();
         let repository = self.repository.clone();

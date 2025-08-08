@@ -109,21 +109,6 @@ services:
           cpus: "0.4"
           memory: "70MB"
 
-  rinha-database:
-    build:
-      context: ./database
-    container_name: rinha-database
-    volumes:
-      - sockets:/sockets:rw
-    networks:
-      - backend
-      - payment-processor
-    deploy:
-      resources:
-        limits:
-          cpus: "0.2"
-          memory: "30MB"
-
 volumes:
   sockets:
 

@@ -9,11 +9,11 @@ use std::io::Result;
 
 use mimalloc::MiMalloc;
 use reqwest::Client;
-use umbral_socket::stream::{UmbralAsyncClient, UmbralServer};
+use umbral_socket::stream::UmbralServer;
 
 use crate::{
     client::ProcessorClient,
-    controller::{payments, payments_summary, purge_payments},
+    controller::{payments_summary, purge_payments},
     entity::State,
     repository::Repository,
     service::Service,
@@ -25,9 +25,8 @@ static GLOBAL: MiMalloc = MiMalloc;
 #[tokio::main]
 async fn main() -> Result<()> {
     let reqwest = Client::new();
-    let umbral = UmbralAsyncClient::new("/sockets/database.sock", 16);
     let client = ProcessorClient::new(reqwest.clone());
-    let repository = Repository::new(umbral.clone());
+    let repository = Repository::new();
     let service = Service::new(client.clone(), repository.clone());
 
     service.initialize_master_worker();
@@ -39,7 +38,6 @@ async fn main() -> Result<()> {
     let state = State::new(repository, service);
     let socket = vars::socket();
     UmbralServer::new(state)
-        .route("SAVE", payments)
         .route("PURGE", purge_payments)
         .route("SUMMARY", payments_summary)
         .run(&socket)

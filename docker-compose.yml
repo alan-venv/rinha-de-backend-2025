@@ -48,6 +48,8 @@ services:
     networks:
       - backend
       - payment-processor
+    depends_on:
+      - rinha-queue
     deploy:
       resources:
         limits:
@@ -60,6 +62,23 @@ services:
     container_name: rinha-fire-2
     environment:
       - SOCKET=/sockets/fire2.sock
+    volumes:
+      - sockets:/sockets:rw
+    networks:
+      - backend
+      - payment-processor
+    depends_on:
+      - rinha-queue
+    deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: "70MB"
+
+  rinha-queue:
+    build:
+      context: ./queue
+    container_name: rinha-queue
     volumes:
       - sockets:/sockets:rw
     networks:

@@ -1471,6 +1471,10 @@ dependencies = [
 [[package]]
 name = "queue"
 version = "0.1.0"
+dependencies = [
+ "bytes",
+ "mio",
+]
 
 [[package]]
 name = "quote"

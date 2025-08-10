@@ -2018,9 +2018,9 @@ checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "umbral-socket"
-version = "0.2.7"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6b95122670c3b163abb0f4c9989b5e5cb6939e08da5b42c670d2ca674ad8a31"
+checksum = "ee0b12959fdca601302394b013e419e2d4fe398d61e2fab9dc61e2a61154c3ff"
 dependencies = [
  "bytes",
  "deadpool",
